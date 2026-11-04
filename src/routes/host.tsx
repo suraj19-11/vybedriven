@@ -25,6 +25,7 @@ import {
   createHostedOpportunity,
   updateHostedOpportunity,
   findOpportunity,
+  isEventOrganizer,
   PRESET_EVENT_BANNERS,
   type HostedEvent,
 } from "@/data/events-store";
@@ -117,6 +118,11 @@ function HostEventPage() {
     if (isEditing && editSlug && !loadedExisting) {
       const existing = findOpportunity(editSlug);
       if (existing) {
+        if (user && !isEventOrganizer(existing, user)) {
+          toast.error("Unauthorized: You can only edit events that you created.");
+          navigate({ to: "/manage-events", replace: true });
+          return;
+        }
         setTitle(existing.title || "");
         setType(existing.type || "Hackathon");
         setTag(existing.tag || "");
@@ -149,7 +155,7 @@ function HostEventPage() {
       setOrganizerEmail(user.email || "");
       setLoadedExisting(true);
     }
-  }, [isEditing, editSlug, loadedExisting, user, profile]);
+  }, [isEditing, editSlug, loadedExisting, user, profile, navigate]);
 
   const activeBannerImage =
     customBannerUrl.trim() ||
@@ -210,6 +216,11 @@ function HostEventPage() {
         : undefined;
 
       if (isEditing && editSlug) {
+        const existing = findOpportunity(editSlug);
+        if (!isEventOrganizer(existing, user)) {
+          toast.error("Unauthorized: You can only edit events that you created.");
+          return;
+        }
         // Update existing event
         const updated = updateHostedOpportunity(
           editSlug,
@@ -237,7 +248,7 @@ function HostEventPage() {
             groupUrl: groupUrl.trim() || undefined,
             contacts,
           },
-          user.id
+          user
         );
 
         toast.success("✅ Event changes saved successfully!");

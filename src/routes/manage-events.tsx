@@ -34,6 +34,7 @@ import {
   updateHostedOpportunity,
   deleteHostedOpportunity,
   getUserRegistrations,
+  isEventOrganizer,
   type EventRegistration,
   type HostedEvent,
 } from "@/data/events-store";
@@ -87,29 +88,31 @@ function ManageEventsPage() {
   const [applicantQuery, setApplicantQuery] = useState("");
   const [applicantStatusFilter, setApplicantStatusFilter] = useState<string>("All");
 
-  const hostedEvents = useHostedEvents(user?.id);
-  const allHostedEvents = useHostedEvents(); // All in local store
-  // If user has hosted events, show theirs; otherwise show all local hosted events so testing is seamless
-  const myEvents = hostedEvents.length > 0 ? hostedEvents : allHostedEvents;
+  // Strictly get only the events hosted by this authenticated user
+  const myEvents = useHostedEvents(user?.id, user?.email);
 
-  // Selected event for applicants view
-  const currentEvent =
-    myEvents.find((e) => e.slug === selectedEventSlug) ||
-    myEvents[0] ||
-    null;
+  // Selected event for applicants view (must be owned by the current organizer)
+  const currentEvent = useMemo(() => {
+    if (!myEvents.length) return null;
+    if (selectedEventSlug) {
+      const matched = myEvents.find((e) => e.slug === selectedEventSlug);
+      if (matched) return matched;
+    }
+    return myEvents[0];
+  }, [myEvents, selectedEventSlug]);
 
-  // Registrations for the selected event
+  // Registrations strictly for this organizer's selected event
   const eventRegistrations = useMemo(() => {
-    if (!currentEvent) return [];
+    if (!currentEvent || !isEventOrganizer(currentEvent, user)) return [];
     return getRegistrationsBySlug(currentEvent.slug);
-  }, [currentEvent]);
+  }, [currentEvent, user]);
 
   // Registrations user personally made as a builder
   const myRegistrations = useMemo(() => {
-    return getUserRegistrations(user?.email || user?.id);
+    return getUserRegistrations(user?.id, user?.email);
   }, [user]);
 
-  // Overall stats
+  // Overall stats strictly for this organizer
   const totalRegistrations = useMemo(() => {
     return myEvents.reduce((acc, e) => acc + getRegistrationsBySlug(e.slug).length, 0);
   }, [myEvents]);
@@ -136,13 +139,13 @@ function ManageEventsPage() {
   const handleToggleEventStatus = (event: HostedEvent) => {
     const nextStatus =
       event.status === "Registration open" ? "Event full" : "Registration open";
-    updateHostedOpportunity(event.slug, { status: nextStatus }, user?.id);
+    updateHostedOpportunity(event.slug, { status: nextStatus }, user);
     toast.success(`Event status changed to "${nextStatus}"`);
   };
 
   const handleDeleteEvent = (slug: string, title: string) => {
     if (confirm(`Are you sure you want to remove "${title}"?`)) {
-      deleteHostedOpportunity(slug, user?.id);
+      deleteHostedOpportunity(slug, user);
       toast.success("Event deleted.");
     }
   };
@@ -344,7 +347,7 @@ function ManageEventsPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => exportRegistrationsToCSV(event.slug, event.title)}
+                            onClick={() => exportRegistrationsToCSV(event.slug, event.title, user)}
                             disabled={regCount === 0}
                             className="rounded-xl border-border text-xs"
                           >
@@ -422,7 +425,7 @@ function ManageEventsPage() {
               {currentEvent && (
                 <div className="flex items-center gap-2">
                   <Button
-                    onClick={() => exportRegistrationsToCSV(currentEvent.slug, currentEvent.title)}
+                    onClick={() => exportRegistrationsToCSV(currentEvent.slug, currentEvent.title, user)}
                     disabled={eventRegistrations.length === 0}
                     className="rounded-full bg-neon text-primary-foreground font-bold shadow-glow-soft hover:brightness-105 text-xs sm:text-sm"
                   >

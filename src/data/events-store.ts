@@ -58,63 +58,8 @@ function notifyStoreChange() {
   window.dispatchEvent(new CustomEvent(EVENT_CHANGE_SIGNAL));
 }
 
-// Initial demo registrations so the organizer experience feels alive immediately
-const SEED_REGISTRATIONS: EventRegistration[] = [
-  {
-    id: "REG-2026-9041",
-    opportunitySlug: "idea-competition-2026",
-    opportunityTitle: "IDEA COMPETITION 2026",
-    fullName: "Aarav Sharma",
-    email: "aarav.sharma@gmail.com",
-    phone: "+91 98201 12345",
-    collegeOrCompany: "IIT Bombay",
-    teamType: "team",
-    teamName: "NeuralNexus",
-    teamSize: "3 members",
-    teamMembers: "Aarav Sharma (Lead), Ria Mehta, Kabir Verma",
-    experienceLevel: "Intermediate",
-    githubUrl: "https://github.com/aaravsh",
-    linkedinUrl: "https://linkedin.com/in/aaravsharma",
-    projectIdea: "Decentralized AI inference network for low-bandwidth rural healthcare diagnostics.",
-    status: "Shortlisted",
-    createdAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-  },
-  {
-    id: "REG-2026-9042",
-    opportunitySlug: "idea-competition-2026",
-    opportunityTitle: "IDEA COMPETITION 2026",
-    fullName: "Pooja Kulkarni",
-    email: "pooja.k@vjti.ac.in",
-    phone: "+91 99304 56789",
-    collegeOrCompany: "VJTI Mumbai",
-    teamType: "team",
-    teamName: "GreenGrid AI",
-    teamSize: "4 members",
-    teamMembers: "Pooja Kulkarni, Devansh Shah, Aditi Rao, Neil D'Souza",
-    experienceLevel: "Advanced",
-    githubUrl: "https://github.com/poojak-vjti",
-    linkedinUrl: "https://linkedin.com/in/poojakulkarni",
-    projectIdea: "Smart micro-grid battery swapping optimizer for Mumbai delivery fleets.",
-    status: "Confirmed",
-    createdAt: new Date(Date.now() - 86400000 * 1).toISOString(),
-  },
-  {
-    id: "REG-2026-9043",
-    opportunitySlug: "vecna-verse-2026",
-    opportunityTitle: "VECNA VERSE",
-    fullName: "Rohan Nair",
-    email: "rohan.nair.dev@gmail.com",
-    phone: "+91 97692 98765",
-    collegeOrCompany: "Fr. CRCE, Bandra",
-    teamType: "solo",
-    experienceLevel: "Intermediate",
-    githubUrl: "https://github.com/rohannair-build",
-    linkedinUrl: "https://linkedin.com/in/rohannair",
-    projectIdea: "Zero-knowledge proof verification pipeline for academic credentials.",
-    status: "Registered",
-    createdAt: new Date(Date.now() - 3600000 * 5).toISOString(),
-  },
-];
+// Initial registrations (empty by default so no dummy/fake attendees ever appear)
+const SEED_REGISTRATIONS: EventRegistration[] = [];
 
 // Helper to safely get stored hosted events
 export function getStoredHostedEvents(): HostedEvent[] {
@@ -249,18 +194,36 @@ export function createHostedOpportunity(input: {
   return newEvent;
 }
 
+// Check strictly if the logged-in user is the creator/organizer of an event
+export function isEventOrganizer(
+  event?: Opportunity | null,
+  user?: { id?: string; email?: string | null } | null
+): boolean {
+  if (!event || !user) return false;
+  const hosted = event as Partial<HostedEvent>;
+  const uId = user.id?.trim();
+  const uEmail = user.email?.trim().toLowerCase();
+
+  const orgId = hosted.organizerId?.trim();
+  const orgEmail = hosted.organizerEmail?.trim().toLowerCase();
+
+  if (uId && orgId && uId === orgId) return true;
+  if (uEmail && orgEmail && uEmail === orgEmail) return true;
+  return false;
+}
+
 // Update existing hosted event
 export function updateHostedOpportunity(
   slug: string,
   updates: Partial<HostedEvent>,
-  userId?: string
+  user?: { id?: string; email?: string | null } | null
 ): HostedEvent | null {
   const list = getStoredHostedEvents();
   const index = list.findIndex((e) => e.slug === slug);
   if (index === -1) return null;
 
-  // Authorization check
-  if (userId && list[index].organizerId && list[index].organizerId !== userId) {
+  // Authorization check: Only the actual host can edit
+  if (user && !isEventOrganizer(list[index], user)) {
     throw new Error("Unauthorized: Only the event creator can edit this event.");
   }
 
@@ -279,12 +242,15 @@ export function updateHostedOpportunity(
 }
 
 // Delete hosted event
-export function deleteHostedOpportunity(slug: string, userId?: string): boolean {
+export function deleteHostedOpportunity(
+  slug: string,
+  user?: { id?: string; email?: string | null } | null
+): boolean {
   const list = getStoredHostedEvents();
   const target = list.find((e) => e.slug === slug);
   if (!target) return false;
 
-  if (userId && target.organizerId && target.organizerId !== userId) {
+  if (user && !isEventOrganizer(target, user)) {
     throw new Error("Unauthorized: Only the event creator can delete this event.");
   }
 
@@ -355,14 +321,19 @@ export function getRegistrationCount(slug: string): number {
 }
 
 // Get all registrations made by a user (builder profile view)
-export function getUserRegistrations(userIdOrEmail?: string): EventRegistration[] {
-  if (!userIdOrEmail) return [];
-  const query = userIdOrEmail.toLowerCase().trim();
-  return getStoredRegistrations().filter(
-    (r) =>
-      (r.userId && r.userId === userIdOrEmail) ||
-      r.email.toLowerCase().trim() === query
-  );
+export function getUserRegistrations(
+  userId?: string,
+  userEmail?: string | null
+): EventRegistration[] {
+  if (!userId && !userEmail) return [];
+  const uId = userId?.trim();
+  const uEmail = userEmail?.trim().toLowerCase();
+
+  return getStoredRegistrations().filter((r) => {
+    if (uId && r.userId && r.userId === uId) return true;
+    if (uEmail && r.email && r.email.trim().toLowerCase() === uEmail) return true;
+    return false;
+  });
 }
 
 // Update participant registration status
@@ -392,9 +363,25 @@ export function isUserRegistered(slug: string, userIdOrEmail?: string): boolean 
   );
 }
 
-// Export CSV of registrants (Unstop feature)
-export function exportRegistrationsToCSV(slug: string, eventTitle: string) {
+// Export CSV of registrants (Organizers only)
+export function exportRegistrationsToCSV(
+  slug: string,
+  eventTitle: string,
+  user?: { id?: string; email?: string | null } | null
+) {
   if (typeof window === "undefined") return;
+  const targetEvent = findOpportunity(slug);
+  if (!targetEvent) {
+    alert("Event not found.");
+    return;
+  }
+
+  // Strict host verification
+  if (user && !isEventOrganizer(targetEvent, user)) {
+    alert("Unauthorized: You can only export registration data for events you organized.");
+    return;
+  }
+
   const list = getRegistrationsBySlug(slug);
   if (!list.length) {
     alert("No registrations to export yet.");
@@ -477,17 +464,26 @@ export function useOpportunities() {
   return data;
 }
 
-// React Hook: live synced hosted events for organizer
-export function useHostedEvents(userId?: string) {
+// React Hook: live synced hosted events strictly belonging to the logged-in organizer
+export function useHostedEvents(userId?: string, userEmail?: string | null) {
   const [events, setEvents] = useState<HostedEvent[]>(() => {
-    const all = getStoredHostedEvents();
-    return userId ? all.filter((e) => e.organizerId === userId) : all;
+    if (!userId && !userEmail) return [];
+    return getStoredHostedEvents().filter((e) =>
+      isEventOrganizer(e, { id: userId, email: userEmail })
+    );
   });
 
   useEffect(() => {
     const update = () => {
-      const all = getStoredHostedEvents();
-      setEvents(userId ? all.filter((e) => e.organizerId === userId) : all);
+      if (!userId && !userEmail) {
+        setEvents([]);
+        return;
+      }
+      setEvents(
+        getStoredHostedEvents().filter((e) =>
+          isEventOrganizer(e, { id: userId, email: userEmail })
+        )
+      );
     };
     update();
     window.addEventListener(EVENT_CHANGE_SIGNAL, update);
@@ -496,7 +492,7 @@ export function useHostedEvents(userId?: string) {
       window.removeEventListener(EVENT_CHANGE_SIGNAL, update);
       window.removeEventListener("storage", update);
     };
-  }, [userId]);
+  }, [userId, userEmail]);
 
   return events;
 }

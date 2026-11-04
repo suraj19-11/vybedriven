@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, useMemo, type FormEvent } from "react";
 import { CheckCircle2, Sparkles, User, ArrowLeft, ExternalLink, PlusCircle, Calendar, Users, Edit3, Download, Ticket, ExternalLink as ExtLink } from "lucide-react";
 import { useHostedEvents, getUserRegistrations, getRegistrationsBySlug, exportRegistrationsToCSV } from "@/data/events-store";
 import { Navbar, Footer } from "@/components/SiteChrome";
@@ -73,6 +73,9 @@ function calculateCompletion(form: typeof emptyProfile): number {
 function ProfilePage() {
   const { user } = Route.useRouteContext();
   const { refreshProfile } = useAuth();
+  const [activeTab, setActiveTab] = useState<"profile" | "hosted" | "registrations">("profile");
+  const myHostedEvents = useHostedEvents(user.id, user.email);
+  const myRegistrations = useMemo(() => getUserRegistrations(user.id, user.email), [user]);
   const [form, setForm] = useState(emptyProfile);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -373,7 +376,7 @@ function ProfilePage() {
                           </Link>
                           <button
                             type="button"
-                            onClick={() => exportRegistrationsToCSV(ev.slug, ev.title)}
+                            onClick={() => exportRegistrationsToCSV(ev.slug, ev.title, user)}
                             disabled={regCount === 0}
                             className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
                           >

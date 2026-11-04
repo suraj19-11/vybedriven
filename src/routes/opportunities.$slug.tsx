@@ -26,7 +26,7 @@ import { Button } from "@/components/ui/button";
 import { getOpportunity } from "@/data/opportunities";
 import { useAuth } from "@/lib/auth";
 import { EventRegistrationModal } from "@/components/EventRegistrationModal";
-import { isUserRegistered, getRegistrationCount, useEventRegistrations } from "@/data/events-store";
+import { isUserRegistered, getRegistrationCount, useEventRegistrations, isEventOrganizer } from "@/data/events-store";
 
 type OpportunitySearch = { register?: string };
 
@@ -90,7 +90,7 @@ function OpportunityDetails() {
 
   const userIdentifier = user?.email || user?.id;
   const isRegistered = isUserRegistered(item.slug, userIdentifier);
-  const isHost = user && (item as any).organizerId === user.id;
+  const isHost = isEventOrganizer(item, user);
 
   const facts = [
     { icon: Calendar, label: "Event dates", value: item.date },
