@@ -204,58 +204,6 @@ function AuthPage() {
     }
   };
 
-  const loginAsDemoBuilder = async () => {
-    setBusy(true);
-    setError("");
-    setMessage("");
-
-    const demoEmail = "builder.demo@vybedriven.com";
-    const demoPassword = "VybeBuilderDemo2026!";
-
-    try {
-      const { error: signInErr } = await supabase.auth.signInWithPassword({
-        email: demoEmail,
-        password: demoPassword,
-      });
-
-      if (!signInErr) {
-        await navigate({ to: search.next, replace: true });
-        return;
-      }
-
-      // If user does not exist yet, attempt automatic creation
-      if (signInErr.message.toLowerCase().includes("invalid login credentials")) {
-        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
-          email: demoEmail,
-          password: demoPassword,
-          options: {
-            data: { full_name: "Demo Builder" },
-          },
-        });
-
-        if (signUpErr) {
-          setBusy(false);
-          setError(signUpErr.message);
-          return;
-        }
-
-        if (signUpData.session) {
-          await navigate({ to: search.next, replace: true });
-          return;
-        }
-
-        setBusy(false);
-        setMessage("Demo user created. Please check if email confirmation is required or try standard sign-in.");
-        return;
-      }
-
-      setBusy(false);
-      setError(signInErr.message);
-    } catch (err: unknown) {
-      setBusy(false);
-      setError(err instanceof Error ? err.message : "Failed to sign in with demo credentials.");
-    }
-  };
 
   useEffect(() => {
     const stored = sessionStorage.getItem("hd-auth-next");
@@ -469,18 +417,7 @@ function AuthPage() {
             </Button>
           </form>
 
-          {/* Quick Demo Access Option */}
-          <div className="mt-5 border-t border-border pt-4">
-            <button
-              type="button"
-              onClick={loginAsDemoBuilder}
-              disabled={busy}
-              className="group flex w-full items-center justify-center gap-2 rounded-xl border border-neon/30 bg-surface/80 px-4 py-2.5 text-xs sm:text-sm font-semibold text-neon transition hover:border-neon hover:bg-neon/15 hover:shadow-glow-soft"
-            >
-              <Sparkles className="size-4 text-neon group-hover:scale-110 transition-transform" />
-              <span>⚡ Quick Demo Builder Login (Instant Access)</span>
-            </button>
-          </div>
+
 
           <p className="mt-5 text-center text-xs sm:text-sm text-muted-foreground">
             {mode === "signin" ? "New to Vybe Driven?" : "Already have an account?"}{" "}

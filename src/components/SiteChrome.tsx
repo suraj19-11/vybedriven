@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Menu,
+  PlusCircle,
+  Users,
   X,
   Instagram,
   Mail,
@@ -229,6 +231,34 @@ function ProfileMenu() {
             </Link>
 
             <Link
+              to="/host"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-foreground/90 font-medium transition hover:bg-surface hover:text-neon"
+            >
+              <PlusCircle className="size-4 text-neon" />
+              <span>Host an Event</span>
+            </Link>
+
+            <Link
+              to="/manage-events"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-foreground/90 font-medium transition hover:bg-surface hover:text-neon"
+            >
+              <Users className="size-4 text-neon" />
+              <span>Organizer Dashboard</span>
+            </Link>
+
+            <Link
+              to="/manage-events"
+              search={{ tab: "my-registrations" }}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-foreground/90 font-medium transition hover:bg-surface hover:text-neon"
+            >
+              <Gift className="size-4 text-neon" />
+              <span>My Registrations</span>
+            </Link>
+
+            <Link
               to="/profile"
               onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-foreground/90 font-medium transition hover:bg-surface hover:text-neon"
@@ -310,6 +340,13 @@ export function Navbar() {
         </div>
         <div className="hidden items-center gap-2 lg:flex">
           <Link
+            to="/host"
+            className="flex items-center gap-1.5 rounded-full border border-neon/40 bg-neon/10 px-3.5 py-1.5 text-xs sm:text-sm font-bold text-neon transition hover:bg-neon hover:text-primary-foreground shadow-glow-soft mr-1"
+          >
+            <PlusCircle className="size-4" />
+            <span>Host Event</span>
+          </Link>
+          <Link
             to="/contact"
             className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition hover:text-neon"
           >
@@ -377,6 +414,31 @@ export function Navbar() {
                 </Link>
               );
             })}
+            <Link
+              to="/host"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-xl border border-neon/40 bg-neon/15 px-3.5 py-3 text-sm font-bold text-neon shadow-glow-soft transition"
+            >
+              <PlusCircle className="size-5 text-neon" />
+              <span>Host an Event</span>
+            </Link>
+            <Link
+              to="/manage-events"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-foreground hover:bg-surface/80 hover:text-neon transition"
+            >
+              <Users className="size-5 text-neon" />
+              <span>Organizer Dashboard</span>
+            </Link>
+            <Link
+              to="/manage-events"
+              search={{ tab: "my-registrations" }}
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold text-foreground hover:bg-surface/80 hover:text-neon transition"
+            >
+              <Gift className="size-5 text-neon" />
+              <span>My Registrations</span>
+            </Link>
             <Link
               to="/contact"
               onClick={() => setOpen(false)}
@@ -518,7 +580,7 @@ export function Footer() {
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Community</h4>
               <ul className="mt-4 space-y-2.5">
                 <li>
-                  <Link to="/contact" className="group inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-neon">
+                  <Link to="/host" className="group inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-neon">
                     <span className="size-1 rounded-full bg-transparent transition group-hover:bg-neon" />
                     Host an Event
                   </Link>

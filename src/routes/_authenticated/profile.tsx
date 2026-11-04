@@ -1,6 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
-import { CheckCircle2, Sparkles, User, ArrowLeft, ExternalLink } from "lucide-react";
+import { CheckCircle2, Sparkles, User, ArrowLeft, ExternalLink, PlusCircle, Calendar, Users, Edit3, Download, Ticket, ExternalLink as ExtLink } from "lucide-react";
+import { useHostedEvents, getUserRegistrations, getRegistrationsBySlug, exportRegistrationsToCSV } from "@/data/events-store";
 import { Navbar, Footer } from "@/components/SiteChrome";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -262,8 +263,190 @@ function ProfilePage() {
           </div>
         </div>
 
-        {/* Form Container */}
-        <form onSubmit={save} className="mt-8 space-y-8">
+        {/* Profile Tabs Navigation */}
+        <div className="mt-8 flex flex-wrap gap-2 border-b border-border pb-3">
+          <button
+            type="button"
+            onClick={() => setActiveTab("profile")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
+              activeTab === "profile"
+                ? "bg-neon text-primary-foreground shadow-glow-soft"
+                : "text-muted-foreground hover:bg-surface hover:text-foreground"
+            }`}
+          >
+            <User className="size-4" />
+            <span>Profile Details</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("hosted")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
+              activeTab === "hosted"
+                ? "bg-neon text-primary-foreground shadow-glow-soft"
+                : "text-muted-foreground hover:bg-surface hover:text-foreground"
+            }`}
+          >
+            <Users className="size-4" />
+            <span>Events Hosted by Me ({myHostedEvents.length})</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("registrations")}
+            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
+              activeTab === "registrations"
+                ? "bg-neon text-primary-foreground shadow-glow-soft"
+                : "text-muted-foreground hover:bg-surface hover:text-foreground"
+            }`}
+          >
+            <Ticket className="size-4" />
+            <span>My Registrations ({myRegistrations.length})</span>
+          </button>
+
+          <div className="ml-auto">
+            <Button asChild size="sm" className="rounded-full bg-gradient-brand text-primary-foreground text-xs font-bold hover:brightness-105 shadow-glow-soft">
+              <Link to="/host">
+                <PlusCircle className="size-3.5 mr-1" /> Host New Event
+              </Link>
+            </Button>
+          </div>
+        </div>
+
+        {/* TAB 2: EVENTS HOSTED BY ME */}
+        {activeTab === "hosted" && (
+          <div className="mt-6 space-y-5">
+            {myHostedEvents.length === 0 ? (
+              <div className="flex min-h-60 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+                <Users className="size-10 text-muted-foreground" />
+                <h3 className="mt-4 text-base sm:text-lg font-bold">You haven't hosted any events yet</h3>
+                <p className="mt-1 max-w-sm text-xs sm:text-sm text-muted-foreground">
+                  Host your college hackathon, coding contest or tech meetup on Vybe Driven and collect registrations directly.
+                </p>
+                <Button asChild className="mt-5 rounded-full bg-gradient-brand text-primary-foreground font-bold">
+                  <Link to="/host">Host an Event Now →</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-5 md:grid-cols-2">
+                {myHostedEvents.map((ev) => {
+                  const regCount = getRegistrationsBySlug(ev.slug).length;
+                  return (
+                    <div
+                      key={ev.slug}
+                      className="flex flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition hover:border-neon/40"
+                    >
+                      <div className="p-5">
+                        <div className="flex items-center justify-between">
+                          <span className="rounded-full bg-neon/15 px-2.5 py-0.5 text-xs font-bold text-neon">
+                            {ev.type}
+                          </span>
+                          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-surface px-2.5 py-0.5 text-xs font-semibold text-neon font-mono">
+                            <Users className="size-3" /> {regCount} Registered
+                          </span>
+                        </div>
+
+                        <h3 className="mt-3 text-lg font-bold text-foreground line-clamp-1">{ev.title}</h3>
+                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{ev.description}</p>
+                        <div className="mt-3 flex flex-wrap gap-2 text-xs text-muted-foreground border-t border-border pt-3">
+                          <span>📅 {ev.date}</span>
+                          <span>📍 {ev.location}</span>
+                        </div>
+                      </div>
+
+                      <div className="border-t border-border bg-surface/50 p-4">
+                        <div className="grid grid-cols-2 gap-2">
+                          <Button asChild size="sm" className="rounded-xl bg-neon text-primary-foreground text-xs font-bold hover:brightness-105">
+                            <Link to="/manage-events" search={{ tab: "registrations", slug: ev.slug }}>
+                              View Applicants ({regCount})
+                            </Link>
+                          </Button>
+                          <Button asChild size="sm" variant="outline" className="rounded-xl border-border text-xs font-semibold">
+                            <Link to="/host" search={{ edit: ev.slug }}>
+                              ✏️ Edit Event
+                            </Link>
+                          </Button>
+                        </div>
+                        <div className="mt-2.5 flex items-center justify-between text-xs pt-2 border-t border-border/60">
+                          <Link to="/opportunities/$slug" params={{ slug: ev.slug }} className="text-neon hover:underline inline-flex items-center gap-1 font-semibold">
+                            Public Page <ExtLink className="size-3" />
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={() => exportRegistrationsToCSV(ev.slug, ev.title)}
+                            disabled={regCount === 0}
+                            className="text-xs text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
+                          >
+                            <Download className="size-3" /> Download CSV
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 3: MY EVENT REGISTRATIONS */}
+        {activeTab === "registrations" && (
+          <div className="mt-6 space-y-4">
+            {myRegistrations.length === 0 ? (
+              <div className="flex min-h-60 flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+                <Ticket className="size-10 text-muted-foreground" />
+                <h3 className="mt-4 text-base sm:text-lg font-bold">No event registrations found</h3>
+                <p className="mt-1 max-w-sm text-xs sm:text-sm text-muted-foreground">
+                  Explore exciting hackathons and tech competitions on Vybe Driven and register in 1 click.
+                </p>
+                <Button asChild className="mt-5 rounded-full bg-gradient-brand text-primary-foreground font-bold">
+                  <Link to="/discover">Explore Hackathons →</Link>
+                </Button>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2">
+                {myRegistrations.map((reg) => (
+                  <div
+                    key={reg.id}
+                    className="flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-neon/40"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between border-b border-border pb-3">
+                        <span className="font-mono text-xs font-bold text-neon">{reg.id}</span>
+                        <span className="rounded-full bg-neon/15 px-2.5 py-0.5 text-xs font-bold text-neon">
+                          {reg.status}
+                        </span>
+                      </div>
+                      <h4 className="mt-3 font-bold text-base text-foreground">
+                        {reg.opportunityTitle}
+                      </h4>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Registered as {reg.fullName} ({reg.teamType === "team" ? `Team ${reg.teamName}` : "Solo"})
+                      </p>
+                    </div>
+
+                    <div className="mt-4 flex items-center justify-between pt-3 border-t border-border">
+                      <Link
+                        to="/opportunities/$slug"
+                        params={{ slug: reg.opportunitySlug }}
+                        className="text-xs font-semibold text-neon hover:underline"
+                      >
+                        View Event Page →
+                      </Link>
+                      <span className="text-[11px] text-muted-foreground">
+                        {new Date(reg.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 1: Form Container */}
+        {activeTab === "profile" && (
+        <form onSubmit={save} className="mt-6 space-y-8">
           {/* 1. Emoji / Avatar Selector Section */}
           <section className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-border pb-4">
@@ -385,6 +568,7 @@ function ProfilePage() {
             </Button>
           </div>
         </form>
+        )}
       </main>
       <Footer />
     </div>

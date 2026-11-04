@@ -143,7 +143,7 @@ function Hero() {
           </p>
           <div className="mt-7 sm:mt-9 flex flex-col min-[480px]:flex-row gap-3 w-full sm:w-auto">
             <PrimaryBtn href="/hackathons" className="w-full min-[480px]:w-auto justify-center">Explore Hackathons <ArrowRight className="size-4" /></PrimaryBtn>
-            <GhostBtn href="/contact" className="hero-ghost w-full min-[480px]:w-auto justify-center">Host an Event</GhostBtn>
+            <GhostBtn href="/host" className="hero-ghost w-full min-[480px]:w-auto justify-center">Host an Event</GhostBtn>
           </div>
         </div>
       </div>
@@ -556,6 +556,7 @@ function CTA() {
             <p className="mx-auto mt-4 sm:mt-5 max-w-lg text-sm sm:text-base text-muted-foreground">Find your next challenge, build with great people and turn your ideas into something real.</p>
             <div className="mt-7 sm:mt-9 flex flex-col justify-center gap-3 sm:flex-row">
               <PrimaryBtn href="/hackathons" className="w-full sm:w-auto justify-center">Explore Hackathons <ArrowRight className="size-4" /></PrimaryBtn>
+              <GhostBtn href="/host" className="w-full sm:w-auto justify-center">Host an Event</GhostBtn>
               <GhostBtn href="/auth?mode=signin&next=%2Fprofile" className="w-full sm:w-auto justify-center">Join Vybe Driven</GhostBtn>
             </div>
           </div>

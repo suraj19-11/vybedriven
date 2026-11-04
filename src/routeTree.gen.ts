@@ -17,7 +17,9 @@ import { Route as DiscoverRouteImport } from './routes/discover'
 import { Route as EventsRouteImport } from './routes/events'
 import { Route as ForgotPasswordRouteImport } from './routes/forgot-password'
 import { Route as HackathonsRouteImport } from './routes/hackathons'
+import { Route as HostRouteImport } from './routes/host'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as ManageEventsRouteImport } from './routes/manage-events'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SigninRouteImport } from './routes/signin'
 import { Route as SignupRouteImport } from './routes/signup'
@@ -63,9 +65,19 @@ const HackathonsRoute = HackathonsRouteImport.update({
   path: '/hackathons',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HostRoute = HostRouteImport.update({
+  id: '/host',
+  path: '/host',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ManageEventsRoute = ManageEventsRouteImport.update({
+  id: '/manage-events',
+  path: '/manage-events',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ResetPasswordRoute = ResetPasswordRouteImport.update({
@@ -102,7 +114,9 @@ export interface FileRoutesByFullPath {
   '/events': typeof EventsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/hackathons': typeof HackathonsRoute
+  '/host': typeof HostRoute
   '/login': typeof LoginRoute
+  '/manage-events': typeof ManageEventsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
@@ -117,7 +131,9 @@ export interface FileRoutesByTo {
   '/events': typeof EventsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/hackathons': typeof HackathonsRoute
+  '/host': typeof HostRoute
   '/login': typeof LoginRoute
+  '/manage-events': typeof ManageEventsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
@@ -134,7 +150,9 @@ export interface FileRoutesById {
   '/events': typeof EventsRoute
   '/forgot-password': typeof ForgotPasswordRoute
   '/hackathons': typeof HackathonsRoute
+  '/host': typeof HostRoute
   '/login': typeof LoginRoute
+  '/manage-events': typeof ManageEventsRoute
   '/reset-password': typeof ResetPasswordRoute
   '/signin': typeof SigninRoute
   '/signup': typeof SignupRoute
@@ -151,7 +169,9 @@ export interface FileRouteTypes {
     | '/events'
     | '/forgot-password'
     | '/hackathons'
+    | '/host'
     | '/login'
+    | '/manage-events'
     | '/reset-password'
     | '/signin'
     | '/signup'
@@ -166,7 +186,9 @@ export interface FileRouteTypes {
     | '/events'
     | '/forgot-password'
     | '/hackathons'
+    | '/host'
     | '/login'
+    | '/manage-events'
     | '/reset-password'
     | '/signin'
     | '/signup'
@@ -182,7 +204,9 @@ export interface FileRouteTypes {
     | '/events'
     | '/forgot-password'
     | '/hackathons'
+    | '/host'
     | '/login'
+    | '/manage-events'
     | '/reset-password'
     | '/signin'
     | '/signup'
@@ -199,7 +223,9 @@ export interface RootRouteChildren {
   EventsRoute: typeof EventsRoute
   ForgotPasswordRoute: typeof ForgotPasswordRoute
   HackathonsRoute: typeof HackathonsRoute
+  HostRoute: typeof HostRoute
   LoginRoute: typeof LoginRoute
+  ManageEventsRoute: typeof ManageEventsRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SigninRoute: typeof SigninRoute
   SignupRoute: typeof SignupRoute
@@ -264,11 +290,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HackathonsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/host': {
+      id: '/host'
+      path: '/host'
+      fullPath: '/host'
+      preLoaderRoute: typeof HostRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/manage-events': {
+      id: '/manage-events'
+      path: '/manage-events'
+      fullPath: '/manage-events'
+      preLoaderRoute: typeof ManageEventsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/reset-password': {
@@ -329,7 +369,9 @@ const rootRouteChildren: RootRouteChildren = {
   EventsRoute: EventsRoute,
   ForgotPasswordRoute: ForgotPasswordRoute,
   HackathonsRoute: HackathonsRoute,
+  HostRoute: HostRoute,
   LoginRoute: LoginRoute,
+  ManageEventsRoute: ManageEventsRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SigninRoute: SigninRoute,
   SignupRoute: SignupRoute,

@@ -215,6 +215,20 @@ export const opportunities: Opportunity[] = [
   { slug: "ai-automation-human-touch", title: "AI, Automation & the Human Touch", type: "Meetup", tag: "AI / Customer Relationships", description: "An interactive Thane meetup about balancing intelligent automation with genuine human connection.", date: "Oct 31, 2026 · 1–3 PM", location: "Ricci's caffè, Hiranandani Estate, Thane", format: "In person", image: allInOnePoster.url, imageFit: "contain", organizer: "Allin1Place Mumbai Chapter", registrationDeadline: "Until capacity is reached", eligibility: "Professionals and builders interested in AI, automation, and customer relationships", teamSize: "Individual registration", fee: "Free · Pay only for what you order", status: "Approval required", registrationUrl: "https://luma.com/rt22ydyb", registrationLabel: "Request to join", registrationNote: "Registration is subject to host approval. The meetup is free; attendees pay only for what they order.", overview: "The Allin1Place Mumbai Mini-Meetup explores where AI can help teams work smarter, what should be automated, and where human connection still matters. Expect practical conversations, real-world use cases, shared experiences, and interactive activities designed to create useful new connections.", schedule: [{ title: "Request approval", date: "Open now", description: "Submit your request to join the free Mumbai mini-meetup." }, { title: "Activities and discussion", date: "Oct 31, 2026 · 1 PM", description: "Explore automation, human-centred customer relationships, and real-world AI use cases." }, { title: "Connections", date: "Until 3 PM", description: "Meet the Allin1Place Mumbai community and continue the conversation." }] },
 ];
 
-export function getOpportunity(slug: string) {
-  return opportunities.find((item) => item.slug === slug);
+export function getOpportunity(slug: string): Opportunity | undefined {
+  const seed = opportunities.find((item) => item.slug === slug);
+  if (seed) return seed;
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem("hd_hosted_events");
+      if (raw) {
+        const hosted = JSON.parse(raw);
+        const found = hosted.find((item) => item.slug === slug);
+        if (found) return found;
+      }
+    } catch {
+      // Fallback
+    }
+  }
+  return undefined;
 }

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { Mail, MapPin, MessageSquare, Send } from "lucide-react";
 import { Navbar, Footer } from "@/components/SiteChrome";
@@ -34,13 +34,13 @@ function Contact() {
           {[
             { Icon: Mail, title: "Email", line: CONTACT_EMAIL, sub: "We reply within 1–2 working days." },
             { Icon: MessageSquare, title: "Instagram", line: "@vybedriven", sub: "Follow Vybe Driven for event updates." },
-            { Icon: MapPin, title: "Events", line: "Hosting a hackathon or meetup?", sub: "Mention your city and dates." },
-          ].map(({ Icon, title, line, sub }) => (
+            { Icon: MapPin, title: "Events", line: "Hosting a hackathon or meetup?", sub: "Launch directly on Vybe Driven with real-time registrations.", isHost: true },
+          ].map((item) => { const { Icon, title, line, sub } = item; return (
             <div key={title} className="flex gap-3.5 sm:gap-4 rounded-2xl border border-border bg-surface p-4 sm:p-5">
               <span className="grid size-10 sm:size-11 shrink-0 place-items-center rounded-full bg-neon/15 text-neon"><Icon className="size-4 sm:size-5" /></span>
-              <div><h3 className="text-sm font-semibold">{title}</h3>{title === "Instagram" ? <a href="https://www.instagram.com/vybedriven" target="_blank" rel="noreferrer" className="mt-0.5 block text-xs sm:text-sm text-foreground hover:text-neon">{line}</a> : <p className="mt-0.5 text-xs sm:text-sm text-foreground">{line}</p>}<p className="mt-1 text-xs text-muted-foreground">{sub}</p></div>
+              <div><h3 className="text-sm font-semibold">{title}</h3>{title === "Instagram" ? <a href="https://www.instagram.com/vybedriven" target="_blank" rel="noreferrer" className="mt-0.5 block text-xs sm:text-sm text-foreground hover:text-neon">{line}</a> : <p className="mt-0.5 text-xs sm:text-sm text-foreground">{line}</p>}<p className="mt-1 text-xs text-muted-foreground">{sub}</p>{(item as any).isHost && <Link to="/host" className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-neon hover:underline">Launch your event on Vybe Driven →</Link>}</div>
             </div>
-          ))}
+          ); })}
         </Reveal>
         <Reveal delay={120}>
           <form onSubmit={submit} className="rounded-2xl sm:rounded-3xl border border-border bg-surface p-5 sm:p-8">
