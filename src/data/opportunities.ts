@@ -55,6 +55,117 @@ export type Opportunity = {
 
 export const opportunities: Opportunity[] = [
   {
+    slug: "luminar-creators-award-2027",
+    title: "Luminar Creators Award 2027",
+    type: "Competition",
+    tag: "Micro-Creators · Brand Deals & Awards",
+    description: "Barter deals se aage badhne ka time aa gaya hai! India ke 1K–10K micro-creators ke liye 24 paid brand collabs, ₹5K cash, official trophy & red carpet Grand Finale.",
+    date: "Jan 8, 2027 · Doors open 05:00 PM IST",
+    location: "Lata Mangeshkar Auditorium, Mira Road, Mumbai",
+    format: "In person",
+    prize: "₹5,000 Cash + 24 Paid Collabs + PR",
+    perks: [
+      {
+        icon: "handshake",
+        emoji: "🤝",
+        title: "1-Year Agency Subscription",
+        description: "Direct Registration Benefit: Saal ke 24 PAID brand collaborations across the year.",
+      },
+      {
+        icon: "rocket",
+        emoji: "🚀",
+        title: "3 Included Brand Collabs",
+        description: "Website pe register hote hi 3 brand collabs milenge, jinke video engagement se Top 100 shortlist honge.",
+      },
+      {
+        icon: "award",
+        emoji: "🏆",
+        title: "Official Trophy & Certificate",
+        description: "Handcrafted 24k champagne gold Luminar statuette & official Certificate of Merit for Top 100 creators.",
+      },
+      {
+        icon: "gift",
+        emoji: "💰",
+        title: "₹5,000 Cash Prize",
+        description: "Guaranteed ₹5,000 cash reward for each of the Top 100 shortlisted creators.",
+      },
+      {
+        icon: "brain",
+        emoji: "📰",
+        title: "50+ Digital Media & 15+ Billboards",
+        description: "50+ digital news & media PR coverage plus photos featured on 15+ prominent digital billboard screens.",
+      },
+      {
+        icon: "laptop",
+        emoji: "🎟️",
+        title: "Red Carpet Zone + Guest Pass",
+        description: "Mumbai Grand Finale mein Red Carpet Zone entry with 1 complimentary guest pass.",
+      },
+    ],
+    image: "/events/luminar-creators-award-2027.jpg",
+    imageFit: "contain",
+    imagePosition: "center center",
+    organizer: "Luminar Creators Award · Powered by Casheco · Vybe Driven (Platform Partner)",
+    registrationDeadline: "Dec 30, 2026",
+    eligibility: "India's 1K–10K micro-creators, digital influencers & content creators across all genres",
+    teamSize: "Individual / Solo Creator",
+    fee: "₹999 (Early Bird Offer)",
+    status: "Registration open",
+    registrationUrl: "https://luminarcreatorsaward.com",
+    registrationLabel: "Visit Official Website · luminarcreatorsaward.com",
+    registrationNote: "Register directly on luminarcreatorsaward.com (Early Bird ₹999) or apply via Vybe Driven to submit your creator profile.",
+    contacts: [
+      { name: "Luminar Creators Support", phone: "+919820123456" },
+      { name: "Casheco Creator Desk", phone: "+919820654321" },
+    ],
+    relatedLinks: [
+      { label: "Official Portal & Slot Booking", url: "https://luminarcreatorsaward.com" },
+    ],
+    overview: `Barter deals se aage badhne ka time aa gaya hai!
+
+Luminar Creators Award lekar aaya hai India ke 1K–10K micro-creators ke liye growth aur direct brand deals ka mauka.
+
+1️⃣ Direct Registration Benefit:
+✅ 1-Year Agency Subscription — Saal ke 24 PAID brand collaborations
+
+2️⃣ Top 100 Selection Process:
+Website pe register hote hi Luminar Creators Award team tumhein 3 brand collaborations degi. In brands ke saath collab videos banakar apne page pe post karni hain, aur in 3 videos ke engagement ke basis par Top 100 creators shortlist honge!
+
+3️⃣ Top 100 Rewards:
+💰 ₹5,000 Cash Prize
+🏆 Official Trophy & Certificate of Merit
+📰 50+ Digital Media Channels mein PR coverage
+🌟 15+ Digital Billboard Screens pe photo feature
+🎟️ Mumbai Grand Finale mein Red Carpet Zone Entry + 1 Guest Pass
+
+🔗 Apply Kaise Karein:
+Bio ke link pe click karo (luminarcreatorsaward.com), form fill karo aur apna slot lock karo!
+
+#LuminarCreatorsAward #PaidCollabs #MicroInfluencerIndia #ContentCreatorIndia #CreatorEconomy #DesiCreators #MumbaiEvents #CreatorGrowth`,
+    schedule: [
+      {
+        title: "Slot Booking & Agency Activation",
+        date: "Open Now",
+        description: "Register at luminarcreatorsaward.com (Early bird ₹999) to lock your spot and immediately activate your 1-Year Agency Subscription.",
+      },
+      {
+        title: "3 Brand Collaborations & Content Creation",
+        date: "Nov – Dec 2026",
+        description: "Create and publish collaboration videos with 3 partner brands. Shortlisting is evaluated on genuine audience engagement.",
+      },
+      {
+        title: "Top 100 Shortlist & Honor Roll",
+        date: "Dec 28, 2026",
+        description: "Top 100 creators announced. Awarded ₹5,000 cash prizes, media press releases, billboard features, and trophies.",
+      },
+      {
+        title: "Mumbai Grand Finale & Red Carpet Gala",
+        date: "Jan 8, 2027 · 05:00 PM IST",
+        description: "Live black-tie ceremony at Lata Mangeshkar Auditorium, Mira Road, Mumbai with red carpet arrivals, VIP networking, and statuette felicitation.",
+      },
+    ],
+  },
+  {
     slug: "idea-competition-2026",
     title: "IDEA COMPETITION 2026",
     type: "Hackathon",
