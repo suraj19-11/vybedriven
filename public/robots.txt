@@ -1,3 +1,11 @@
+User-agent: *
+Allow: /
+
+# Disallow indexing of private authenticated areas
+Disallow: /profile
+Disallow: /manage-events
+
+# Search engine crawlers
 User-agent: Googlebot
 Allow: /
 
@@ -10,5 +18,6 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
-User-agent: *
-Allow: /
+# XML Sitemap and Host declarations for search engines
+Sitemap: https://www.vybedriven.in/sitemap.xml
+Host: https://www.vybedriven.in

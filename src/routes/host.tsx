@@ -42,8 +42,17 @@ export const Route = createFileRoute("/host")({
   }),
   head: ({ search }) => ({
     meta: [
-      { title: search.edit ? "Edit Event — Vybe Driven" : "Host an Event — Vybe Driven" },
-      { name: "description", content: "Create and publish your hackathon, competition or meetup on Vybe Driven." },
+      { title: search.edit ? "Edit Hosted Event — Vybe Driven" : "Host a Hackathon or Event (Free Organizer Portal) — Vybe Driven (Vybe)" },
+      { name: "description", content: "Host your college hackathon, coding competition, or developer meetup on Vybe Driven (Vybe / Vibe Driven). Publish in minutes, reach thousands of ambitious students, and manage applications." },
+      { name: "keywords", content: "host hackathon, list hackathon, college hackathon organizer, hackathon management platform, unstop alternative, vybe driven, vybe, vibe driven, vibe" },
+      { property: "og:title", content: "Host a Hackathon or Tech Event on Vybe Driven" },
+      { property: "og:description", content: "Reach ambitious developers and builders across India. Publish and manage your hackathon on Vybe Driven." },
+      { property: "og:url", content: "https://www.vybedriven.in/host" },
+      { property: "og:image", content: "https://www.vybedriven.in/vybe-driven.png" },
+      { name: "robots", content: "index, follow" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://www.vybedriven.in/host" },
     ],
   }),
   component: HostEventPage,

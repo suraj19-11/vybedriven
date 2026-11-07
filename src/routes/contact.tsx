@@ -6,7 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Reveal, Eyebrow } from "@/components/ui-hd";
 
 export const Route = createFileRoute("/contact")({
-  head: () => ({ meta: [{ title: "Contact Us — Vybe Driven" }, { name: "description", content: "Get in touch with the Vybe Driven team for partnerships, events, or support." }, { property: "og:title", content: "Contact Us — Vybe Driven" }, { property: "og:description", content: "Reach the Vybe Driven team for partnerships, events, or support." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }] }),
+  head: () => ({
+    meta: [
+      { title: "Contact Vybe Driven (Vybe) — Partnerships, Event Hosting & Support" },
+      { name: "description", content: "Get in touch with the Vybe Driven team for college hackathon partnerships, event sponsorship, platform queries, or builder support." },
+      { name: "keywords", content: "contact vybe driven, vybe contact, vibe driven, partnership vybe driven, event hosting queries" },
+      { property: "og:title", content: "Contact Vybe Driven" },
+      { property: "og:description", content: "Reach the Vybe Driven team for partnerships, events, or support." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://www.vybedriven.in/contact" },
+      { name: "twitter:card", content: "summary" },
+      { name: "robots", content: "index, follow" },
+    ],
+    links: [
+      { rel: "canonical", href: "https://www.vybedriven.in/contact" },
+    ],
+  }),
   component: Contact,
 });
 

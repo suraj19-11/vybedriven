@@ -81,15 +81,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Vybe Driven" },
-      { name: "description", content: "Hackathons and tech events for ambitious builders." },
+      { title: "Vybe Driven (Vybe) — Discover Nearest Hackathons, Coding Competitions & Tech Events" },
+      { name: "description", content: "Vybe Driven (Vybe / Vibe) is India's leading platform discovering nearest hackathons, coding competitions, developer meetups, and creator awards in Mumbai and all-India." },
+      { name: "keywords", content: "vybe driven, vybe, vibe driven, vibe, vybedriven, nearest hackathon, hackathons near me, hackathons in mumbai, hackathons in india, tech events, coding competitions, upcoming hackathons 2026 2027, student hackathons, luminar creators award, idea competition" },
       { name: "author", content: "Vybe Driven" },
-      { property: "og:title", content: "Vybe Driven" },
-      { property: "og:description", content: "Hackathons and tech events for ambitious builders." },
+      { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
+      { name: "googlebot", content: "index, follow" },
+      { name: "theme-color", content: "#030704" },
+      { name: "geo.region", content: "IN-MH" },
+      { name: "geo.placename", content: "Mumbai, Maharashtra, India" },
+      { property: "og:site_name", content: "Vybe Driven" },
+      { property: "og:title", content: "Vybe Driven (Vybe) — Discover Nearest Hackathons & Tech Events" },
+      { property: "og:description", content: "Find the nearest hackathons, coding competitions, and developer events on Vybe Driven (Vybe / Vibe Driven)." },
       { property: "og:type", content: "website" },
+      { property: "og:locale", content: "en_IN" },
+      { property: "og:image", content: "https://www.vybedriven.in/vybe-driven.png" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:site", content: "@vybedriven" },
+      { name: "twitter:creator", content: "@vybedriven" },
+      { name: "twitter:image", content: "https://www.vybedriven.in/vybe-driven.png" },
     ],
     links: [
+      { rel: "canonical", href: "https://www.vybedriven.in/" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" },
@@ -107,10 +120,53 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  const structuredData = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://www.vybedriven.in/#organization",
+        "name": "Vybe Driven",
+        "alternateName": ["Vybe", "Vybedriven", "Vibe Driven", "Vibe", "VybeDriven India"],
+        "url": "https://www.vybedriven.in",
+        "logo": "https://www.vybedriven.in/favicon.png",
+        "image": "https://www.vybedriven.in/vybe-driven.png",
+        "description": "Vybe Driven (Vybe / Vibe) is India's premier community platform discovering upcoming hackathons, coding competitions, technology summits, and creator opportunities for ambitious developers and builders.",
+        "sameAs": [
+          "https://www.instagram.com/vybedriven",
+          "https://github.com/vaibhav-tx/vybedriven"
+        ],
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "email": "vybedriven@gmail.com",
+          "contactType": "customer support"
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://www.vybedriven.in/#website",
+        "url": "https://www.vybedriven.in",
+        "name": "Vybe Driven",
+        "alternateName": ["Vybe", "Vibe Driven", "Vybedriven", "Vibe"],
+        "description": "Discover national hackathons, competitions and technology events across Mumbai, Bangalore, Pune and India.",
+        "publisher": { "@id": "https://www.vybedriven.in/#organization" },
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.vybedriven.in/discover?search={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    ]
+  };
+
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: `document.documentElement.classList.add('dark');try{localStorage.setItem('hd-theme','dark')}catch(e){}` }} />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData) }}
+        />
         <HeadContent />
       </head>
       <body>

@@ -41,16 +41,39 @@ export const Route = createFileRoute("/opportunities/$slug")({
     return opportunity;
   },
   head: ({ loaderData }) => {
-    const title = loaderData ? `${loaderData.title} — Vybe Driven` : "Event unavailable — Vybe Driven";
-    const description = loaderData?.description ?? "This Vybe Driven event is unavailable.";
+    if (!loaderData) {
+      return {
+        meta: [{ title: "Event unavailable — Vybe Driven" }],
+      };
+    }
+    const pageTitle = `${loaderData.title} | ${loaderData.type} in ${loaderData.location} — Vybe Driven`;
+    const canonicalUrl = `https://www.vybedriven.in/opportunities/${loaderData.slug}`;
+    const imageUrl = loaderData.image?.startsWith("http")
+      ? loaderData.image
+      : `https://www.vybedriven.in${loaderData.image}`;
+    const keywords = `${loaderData.title}, ${loaderData.type}, hackathons in ${loaderData.location}, nearest hackathon, hackathons near me, vybe driven, vybe, vibe driven, vibe, ${loaderData.organizer}, coding competitions 2026, tech events`;
+
     return {
       meta: [
-        { title },
-        { name: "description", content: description },
-        { property: "og:title", content: title },
-        { property: "og:description", content: description },
+        { title: pageTitle },
+        { name: "description", content: loaderData.description },
+        { name: "keywords", content: keywords },
+        { name: "robots", content: "index, follow, max-image-preview:large" },
+        { property: "og:site_name", content: "Vybe Driven" },
+        { property: "og:title", content: pageTitle },
+        { property: "og:description", content: loaderData.description },
         { property: "og:type", content: "website" },
+        { property: "og:url", content: canonicalUrl },
+        { property: "og:image", content: imageUrl },
+        { property: "og:locale", content: "en_IN" },
         { name: "twitter:card", content: "summary_large_image" },
+        { name: "twitter:site", content: "@vybedriven" },
+        { name: "twitter:title", content: pageTitle },
+        { name: "twitter:description", content: loaderData.description },
+        { name: "twitter:image", content: imageUrl },
+      ],
+      links: [
+        { rel: "canonical", href: canonicalUrl },
       ],
     };
   },
@@ -102,8 +125,57 @@ function OpportunityDetails() {
     { icon: WalletCards, label: "Entry fee", value: item.fee },
   ];
 
+  const eventStructuredData = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "name": item.title,
+    "description": item.description,
+    "image": item.image?.startsWith("http")
+      ? item.image
+      : `https://www.vybedriven.in${item.image}`,
+    "startDate": item.date,
+    "eventAttendanceMode":
+      item.format === "Online"
+        ? "https://schema.org/OnlineEventAttendanceMode"
+        : item.format === "Hybrid"
+        ? "https://schema.org/MixedEventAttendanceMode"
+        : "https://schema.org/OfflineEventAttendanceMode",
+    "eventStatus":
+      item.status === "Event full" || item.status === "Sold out"
+        ? "https://schema.org/EventMovedOnline"
+        : "https://schema.org/EventScheduled",
+    "location": {
+      "@type": "Place",
+      "name": item.location,
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": item.location.includes("Mumbai") ? "Mumbai" : item.location.includes("Pune") ? "Pune" : "India",
+        "addressCountry": "IN"
+      }
+    },
+    "organizer": {
+      "@type": "Organization",
+      "name": item.organizer,
+      "url": "https://www.vybedriven.in"
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": item.registrationUrl || `https://www.vybedriven.in/opportunities/${item.slug}`,
+      "price": item.fee.includes("₹") ? (item.fee.replace(/[^\d]/g, "") || "0") : "0",
+      "priceCurrency": "INR",
+      "availability":
+        item.status === "Sold out"
+          ? "https://schema.org/SoldOut"
+          : "https://schema.org/InStock"
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(eventStructuredData) }}
+      />
       <Navbar />
       <main>
         {/* Hero Section */}
