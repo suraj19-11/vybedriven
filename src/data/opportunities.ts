@@ -112,14 +112,10 @@ export const opportunities: Opportunity[] = [
     fee: "₹999 (Early Bird Offer)",
     status: "Registration open",
     registrationUrl: "https://luminarcreatorsaward.com",
-    registrationLabel: "Visit Official Website · luminarcreatorsaward.com",
-    registrationNote: "Register directly on luminarcreatorsaward.com (Early Bird ₹999) or apply via Vybe Driven to submit your creator profile.",
+    registrationNote: "Register now on the official Luminar Creators portal (Early Bird ₹999) to lock your nomination and agency benefits.",
     contacts: [
       { name: "Luminar Creators Support", phone: "+919820123456" },
       { name: "Casheco Creator Desk", phone: "+919820654321" },
-    ],
-    relatedLinks: [
-      { label: "Official Portal & Slot Booking", url: "https://luminarcreatorsaward.com" },
     ],
     overview: `Barter deals se aage badhne ka time aa gaya hai!
 

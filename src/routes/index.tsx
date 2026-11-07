@@ -484,7 +484,7 @@ function Events() {
                   rel="noopener noreferrer"
                   className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 px-6 py-3.5 text-sm font-bold text-black transition hover:brightness-110 hover:shadow-glow"
                 >
-                  Register at luminarcreatorsaward.com <ArrowRight className="size-4" />
+                  Register Now <ArrowRight className="size-4" />
                 </a>
                 <Link
                   to="/opportunities/$slug"

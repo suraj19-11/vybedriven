@@ -20,6 +20,7 @@ import {
   Sparkles,
   Crown,
   Ticket,
+  ArrowRight,
 } from "lucide-react";
 import { Navbar, Footer } from "@/components/SiteChrome";
 import { Button } from "@/components/ui/button";
@@ -350,29 +351,28 @@ function OpportunityDetails() {
                   </div>
                 ) : (
                   <>
-                    {/* Primary Direct Registration Button */}
-                    {item.status !== "Sold out" && (
-                      <Button
-                        type="button"
-                        onClick={() => setRegModalOpen(true)}
-                        className="mt-5 sm:mt-6 w-full rounded-full bg-gradient-brand text-primary-foreground font-bold shadow-glow hover:brightness-105"
-                      >
-                        Register on Vybe Driven
-                        <Sparkles className="ml-2 inline size-4" />
-                      </Button>
-                    )}
-
-                    {/* Secondary External Registration Link if present */}
-                    {item.registrationUrl && (
+                    {/* Registration Button: External link if registrationUrl is set, otherwise direct modal */}
+                    {item.registrationUrl ? (
                       <a
                         href={item.registrationUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2 text-xs font-medium text-muted-foreground transition hover:border-neon hover:text-foreground"
+                        className="mt-5 sm:mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-brand px-6 py-3.5 text-sm font-bold text-primary-foreground shadow-glow hover:brightness-105 transition"
                       >
-                        <span>{item.registrationLabel ?? "Official Portal / Form"}</span>
-                        <ExternalLink className="size-3.5 opacity-70" />
+                        Register Now
+                        <ArrowRight className="size-4" />
                       </a>
+                    ) : (
+                      item.status !== "Sold out" && (
+                        <Button
+                          type="button"
+                          onClick={() => setRegModalOpen(true)}
+                          className="mt-5 sm:mt-6 w-full rounded-full bg-gradient-brand text-primary-foreground font-bold shadow-glow hover:brightness-105"
+                        >
+                          Register Now
+                          <Sparkles className="ml-2 inline size-4" />
+                        </Button>
+                      )
                     )}
                   </>
                 )}
