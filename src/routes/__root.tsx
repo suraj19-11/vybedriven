@@ -81,6 +81,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "google-site-verification", content: "4o5pm1oHZ70Xwkp0j56F3sGtRlWxMMQjlv922S9betY" },
       { title: "Vybe Driven (Vybe) — Discover Nearest Hackathons, Coding Competitions & Tech Events" },
       { name: "description", content: "Vybe Driven (Vybe / Vibe) is India's leading platform discovering nearest hackathons, coding competitions, developer meetups, and creator awards in Mumbai and all-India." },
       { name: "keywords", content: "vybe driven, vybe, vibe driven, vibe, vybedriven, nearest hackathon, hackathons near me, hackathons in mumbai, hackathons in india, tech events, coding competitions, upcoming hackathons 2026 2027, student hackathons, luminar creators award, idea competition" },
