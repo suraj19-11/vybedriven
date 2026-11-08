@@ -21,6 +21,8 @@ import {
   Crown,
   Ticket,
   ArrowRight,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Navbar, Footer } from "@/components/SiteChrome";
 import { Button } from "@/components/ui/button";
@@ -82,98 +84,127 @@ export const Route = createFileRoute("/opportunities/$slug")({
 });
 
 function FormattedOverview({ overview }: { overview: string }) {
+  const [expanded, setExpanded] = useState(false);
   const sections = overview.split(/\n\n+/);
   return (
-    <div className="space-y-5 max-w-3xl text-sm sm:text-base leading-relaxed text-muted-foreground">
-      {sections.map((sec, idx) => {
-        const lines = sec.trim().split("\n");
-        const firstLine = lines[0].trim();
+    <div className="relative">
+      <div
+        className={`space-y-5 max-w-3xl text-sm sm:text-base leading-relaxed text-muted-foreground transition-all duration-300 ${
+          !expanded ? "max-h-[300px] overflow-hidden" : ""
+        }`}
+      >
+        {sections.map((sec, idx) => {
+          const lines = sec.trim().split("\n");
+          const firstLine = lines[0].trim();
 
-        const isHeading =
-          lines.length > 1 &&
-          (firstLine.endsWith(":") || firstLine.startsWith("###") || firstLine.startsWith("**"));
+          const isHeading =
+            lines.length > 1 &&
+            (firstLine.endsWith(":") || firstLine.startsWith("###") || firstLine.startsWith("**"));
 
-        if (isHeading) {
-          const headingText = firstLine.replace(/^[#*]+/, "").replace(/[*:]+$/, "").trim();
-          const restLines = lines.slice(1);
-          return (
-            <div key={idx} className="pt-2">
-              <h3 className="text-base sm:text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                <span className="size-1.5 rounded-full bg-neon shrink-0" />
-                <span>{headingText}</span>
-              </h3>
-              <div className="space-y-2">
-                {restLines.map((line, lIdx) => {
-                  const trimmed = line.trim();
-                  if (trimmed.startsWith("•") || trimmed.startsWith("-") || trimmed.startsWith("*")) {
-                    const cleanText = trimmed.replace(/^[•\-*]\s*/, "");
-                    const colonIndex = cleanText.indexOf(":");
+          if (isHeading) {
+            const headingText = firstLine.replace(/^[#*]+/, "").replace(/[*:]+$/, "").trim();
+            const restLines = lines.slice(1);
+            return (
+              <div key={idx} className="pt-2">
+                <h3 className="text-base sm:text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+                  <span className="size-1.5 rounded-full bg-neon shrink-0" />
+                  <span>{headingText}</span>
+                </h3>
+                <div className="space-y-2">
+                  {restLines.map((line, lIdx) => {
+                    const trimmed = line.trim();
+                    if (trimmed.startsWith("•") || trimmed.startsWith("-") || trimmed.startsWith("*")) {
+                      const cleanText = trimmed.replace(/^[•\-*]\s*/, "");
+                      const colonIndex = cleanText.indexOf(":");
+                      return (
+                        <div key={lIdx} className="flex items-start gap-2.5 text-xs sm:text-sm pl-2 text-foreground/90">
+                          <span className="mt-2 size-1 rounded-full bg-neon/80 shrink-0" />
+                          <span>
+                            {colonIndex > 0 ? (
+                              <>
+                                <strong className="font-semibold text-foreground">
+                                  {cleanText.slice(0, colonIndex + 1)}
+                                </strong>
+                                {cleanText.slice(colonIndex + 1)}
+                              </>
+                            ) : (
+                              cleanText
+                            )}
+                          </span>
+                        </div>
+                      );
+                    }
                     return (
-                      <div key={lIdx} className="flex items-start gap-2.5 text-xs sm:text-sm pl-2 text-foreground/90">
-                        <span className="mt-2 size-1 rounded-full bg-neon/80 shrink-0" />
-                        <span>
-                          {colonIndex > 0 ? (
-                            <>
-                              <strong className="font-semibold text-foreground">
-                                {cleanText.slice(0, colonIndex + 1)}
-                              </strong>
-                              {cleanText.slice(colonIndex + 1)}
-                            </>
-                          ) : (
-                            cleanText
-                          )}
-                        </span>
-                      </div>
+                      <p key={lIdx} className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                        {line}
+                      </p>
                     );
-                  }
+                  })}
+                </div>
+              </div>
+            );
+          }
+
+          const isBulletList = lines.every((l) => {
+            const t = l.trim();
+            return t.startsWith("•") || t.startsWith("-") || t.startsWith("*") || /^\d+[.)]/.test(t);
+          });
+
+          if (isBulletList) {
+            return (
+              <ul key={idx} className="space-y-2 pl-2 my-2">
+                {lines.map((l, lIdx) => {
+                  const clean = l.trim().replace(/^[•\-*]\s*|^\d+[.)]\s*/, "");
+                  const colonIndex = clean.indexOf(":");
                   return (
-                    <p key={lIdx} className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                      {line}
-                    </p>
+                    <li key={lIdx} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/90">
+                      <span className="mt-2 size-1.5 rounded-full bg-neon shrink-0" />
+                      <span>
+                        {colonIndex > 0 ? (
+                          <>
+                            <strong className="font-semibold text-foreground">{clean.slice(0, colonIndex + 1)}</strong>
+                            {clean.slice(colonIndex + 1)}
+                          </>
+                        ) : (
+                          clean
+                        )}
+                      </span>
+                    </li>
                   );
                 })}
-              </div>
-            </div>
-          );
-        }
+              </ul>
+            );
+          }
 
-        const isBulletList = lines.every((l) => {
-          const t = l.trim();
-          return t.startsWith("•") || t.startsWith("-") || t.startsWith("*") || /^\d+[.)]/.test(t);
-        });
-
-        if (isBulletList) {
           return (
-            <ul key={idx} className="space-y-2 pl-2 my-2">
-              {lines.map((l, lIdx) => {
-                const clean = l.trim().replace(/^[•\-*]\s*|^\d+[.)]\s*/, "");
-                const colonIndex = clean.indexOf(":");
-                return (
-                  <li key={lIdx} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/90">
-                    <span className="mt-2 size-1.5 rounded-full bg-neon shrink-0" />
-                    <span>
-                      {colonIndex > 0 ? (
-                        <>
-                          <strong className="font-semibold text-foreground">{clean.slice(0, colonIndex + 1)}</strong>
-                          {clean.slice(colonIndex + 1)}
-                        </>
-                      ) : (
-                        clean
-                      )}
-                    </span>
-                  </li>
-                );
-              })}
-            </ul>
+            <p key={idx} className="text-sm sm:text-base leading-relaxed text-muted-foreground">
+              {sec}
+            </p>
           );
-        }
+        })}
+      </div>
 
-        return (
-          <p key={idx} className="text-sm sm:text-base leading-relaxed text-muted-foreground">
-            {sec}
-          </p>
-        );
-      })}
+      {!expanded && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background via-background/90 to-transparent" />
+      )}
+
+      <div className="mt-4 pt-1 flex items-center justify-start">
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          className="inline-flex items-center gap-1.5 rounded-full border border-neon/50 bg-surface/90 px-4 py-1.5 text-xs font-semibold text-neon transition hover:border-neon hover:bg-neon hover:text-primary-foreground shadow-glow-soft cursor-pointer"
+        >
+          {expanded ? (
+            <>
+              Show less <ChevronUp className="size-3.5" />
+            </>
+          ) : (
+            <>
+              Read more <ChevronDown className="size-3.5" />
+            </>
+          )}
+        </button>
+      </div>
     </div>
   );
 }
@@ -305,6 +336,23 @@ function OpportunityDetails() {
               <p className="mt-4 sm:mt-5 text-xs sm:text-sm text-muted-foreground">
                 Hosted by <span className="font-semibold text-foreground">{item.organizer}</span>
               </p>
+
+              {/* Unstop-style Top Prize & Trophy Banner */}
+              {item.prize && (
+                <div className="mt-5 inline-flex items-center gap-3 sm:gap-4 rounded-2xl border border-sky-400/35 bg-gradient-to-r from-sky-500/15 via-cyan-500/10 to-transparent p-2.5 sm:p-3 pr-4 sm:pr-5 shadow-glow-soft">
+                  <div className="pl-1">
+                    <p className="text-[11px] font-bold uppercase tracking-wider text-sky-400">Prizes worth</p>
+                    <p className="text-xl min-[400px]:text-2xl sm:text-3xl font-extrabold text-foreground font-mono tracking-tight">
+                      {item.prize}
+                    </p>
+                  </div>
+                  <img
+                    src="/events/prize-trophy-badge.png"
+                    alt="Prize Trophy"
+                    className="h-12 min-[400px]:h-14 sm:h-16 w-auto object-contain shrink-0 drop-shadow-[0_4px_14px_rgba(250,204,21,0.45)]"
+                  />
+                </div>
+              )}
             </div>
             <img
               src={item.image}
@@ -332,7 +380,7 @@ function OpportunityDetails() {
                 ))}
               </div>
 
-              {/* About Section */}
+              {/* About Section with Read More */}
               <section className="py-7 sm:py-9">
                 <div className="flex items-center gap-2.5 mb-5">
                   <span className="h-6 w-1 rounded-full bg-neon shadow-glow-soft" />
@@ -346,60 +394,63 @@ function OpportunityDetails() {
               {/* Stages and Timeline */}
               {item.schedule && item.schedule.length > 0 && (
                 <section className="border-t border-border py-8 sm:py-10">
-                  <div className="flex items-center gap-2.5 mb-6">
+                  <div className="flex items-center gap-2.5 mb-7">
                     <span className="h-6 w-1 rounded-full bg-neon shadow-glow-soft" />
                     <h2 className="text-xl sm:text-2xl font-bold text-foreground">Stages and Timelines</h2>
                   </div>
 
-                  <div className="relative pl-3 sm:pl-5 before:absolute before:left-2 before:top-3 before:bottom-6 before:w-[2px] before:border-l-2 before:border-dashed before:border-border/80">
-                    {item.schedule.map((step, index) => (
-                      <div key={step.title} className="relative pb-8 last:pb-2 pl-4 sm:pl-6">
-                        {/* Timeline Header Badge */}
-                        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 mb-3">
-                          {step.dateBadge && (
-                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs font-bold text-foreground font-mono shadow-sm">
-                              <Calendar className="size-3.5 text-neon" />
-                              <span>{step.dateBadge}</span>
+                  <div className="relative pl-6 sm:pl-8 before:absolute before:left-3 sm:before:left-3.5 before:top-4 before:bottom-6 before:w-[2px] before:border-l-2 before:border-dashed before:border-neon/50">
+                    {item.schedule.map((step, index) => {
+                      const dateParts = step.dateBadge?.split(" ") || [];
+                      const month = dateParts[0] || `Stage`;
+                      const day = dateParts[1] || `${index + 1}`;
+                      return (
+                        <div key={step.title} className="relative pb-9 last:pb-2">
+                          {/* Calendar Node directly over the timeline line */}
+                          <div className="flex items-center gap-3.5 sm:gap-4 mb-3.5">
+                            <div className="relative -ml-[23px] sm:-ml-[25px] flex flex-col items-center justify-center rounded-xl border border-neon/70 bg-surface-2 px-2.5 py-1 shadow-glow-soft min-w-[46px] text-center shrink-0">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-neon leading-tight">{month}</span>
+                              <span className="text-base font-extrabold text-foreground leading-none">{day}</span>
                             </div>
-                          )}
-                          <span className="text-xs sm:text-sm font-medium text-muted-foreground font-mono">
-                            {step.date}
-                          </span>
-                        </div>
-
-                        {/* Stage Card */}
-                        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm transition hover:border-neon/40 hover:shadow-glow-soft">
-                          <div className="flex items-center justify-between gap-2">
-                            <h3 className="text-base sm:text-lg font-bold text-foreground">{step.title}</h3>
-                            <span className="rounded-full bg-neon/10 border border-neon/30 px-2.5 py-0.5 text-[11px] font-semibold text-neon font-mono shrink-0">
-                              Stage {index + 1}
+                            <span className="text-xs sm:text-sm font-semibold font-mono text-neon">
+                              {step.date}
                             </span>
                           </div>
 
-                          <p className="mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground">
-                            {step.description}
-                          </p>
-
-                          {step.bullets && step.bullets.length > 0 && (
-                            <ul className="mt-3.5 space-y-1.5 pl-1">
-                              {step.bullets.map((b) => (
-                                <li key={b} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/90">
-                                  <span className="mt-1.5 size-1.5 rounded-full bg-neon shrink-0" />
-                                  <span>{b}</span>
-                                </li>
-                              ))}
-                            </ul>
-                          )}
-
-                          {step.evaluation && (
-                            <div className="mt-4 rounded-xl border border-border/80 bg-surface/70 px-4 py-2.5 text-xs text-muted-foreground">
-                              <span className="font-bold text-foreground">Evaluation: </span>
-                              <span>{step.evaluation}</span>
+                          {/* Stage Card */}
+                          <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm transition hover:border-neon/50 hover:bg-surface-2/60 hover:shadow-glow-soft">
+                            <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-3">
+                              <h3 className="text-base sm:text-lg font-bold text-foreground">{step.title}</h3>
+                              <span className="rounded-full bg-neon/15 border border-neon/40 px-3 py-0.5 text-xs font-semibold text-neon font-mono shrink-0">
+                                Stage {index + 1}
+                              </span>
                             </div>
-                          )}
+
+                            <p className="mt-3 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+                              {step.description}
+                            </p>
+
+                            {step.bullets && step.bullets.length > 0 && (
+                              <ul className="mt-3.5 space-y-2 pl-1">
+                                {step.bullets.map((b) => (
+                                  <li key={b} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/90">
+                                    <span className="mt-1.5 size-1.5 rounded-full bg-neon shrink-0 shadow-glow-soft" />
+                                    <span>{b}</span>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+
+                            {step.evaluation && (
+                              <div className="mt-4 rounded-xl border border-neon/20 bg-neon/5 px-4 py-2.5 text-xs text-muted-foreground">
+                                <span className="font-bold text-neon">Evaluation: </span>
+                                <span className="text-foreground/90">{step.evaluation}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 </section>
               )}
@@ -415,57 +466,80 @@ function OpportunityDetails() {
                   {item.rewards && item.rewards.length > 0 ? (
                     <div className="space-y-4">
                       {item.rewards.map((rew) => (
-                        <div
-                          key={rew.title}
-                          className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-6 transition hover:border-neon/40 hover:shadow-glow-soft"
-                        >
-                          {rew.type === "cash" && (
-                            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-emerald-400 via-neon to-emerald-500" />
-                          )}
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="flex items-center gap-4 sm:gap-6">
-                              {rew.amount ? (
-                                <div className="flex flex-col shrink-0 min-w-[130px] sm:min-w-[160px]">
-                                  <span className="text-2xl sm:text-3xl font-extrabold text-neon font-mono tracking-tight">
-                                    {rew.amount}
-                                  </span>
-                                  <span className="text-[11px] font-bold tracking-widest text-emerald-400 uppercase">
-                                    {rew.amountSub || "WORTH"}
-                                  </span>
+                        rew.type === "cash" ? (
+                          <div
+                            key={rew.title}
+                            className="relative overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/15 via-surface to-surface p-6 sm:p-7 shadow-[0_0_30px_rgba(245,158,11,0.15)] transition hover:border-amber-400"
+                          >
+                            <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-amber-400 via-yellow-300 to-amber-500" />
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                              <div className="flex items-center gap-4 sm:gap-6">
+                                <div className="relative shrink-0">
+                                  <img
+                                    src="/events/prize-trophy-badge.png"
+                                    alt="Grand Prize Trophy"
+                                    className="h-20 sm:h-24 w-auto object-contain drop-shadow-[0_8px_20px_rgba(245,158,11,0.5)]"
+                                  />
                                 </div>
-                              ) : (
-                                <div className="size-12 sm:size-14 rounded-2xl bg-gradient-to-br from-blue-500/15 via-surface to-indigo-500/10 border border-blue-500/25 flex items-center justify-center shrink-0 shadow-sm">
-                                  <Gift className="size-6 text-blue-400" />
-                                </div>
-                              )}
-
-                              {rew.amount && <div className="hidden sm:block h-12 w-px bg-border" />}
-
-                              <div>
-                                <h3 className="text-base sm:text-lg font-bold text-foreground">{rew.title}</h3>
-                                {rew.description && (
+                                <div className="flex flex-col">
+                                  <div className="flex items-baseline gap-2">
+                                    <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-amber-400 font-mono tracking-tight drop-shadow-[0_2px_10px_rgba(245,158,11,0.3)]">
+                                      {rew.amount}
+                                    </span>
+                                    <span className="text-xs sm:text-sm font-extrabold tracking-widest text-amber-300 uppercase">
+                                      {rew.amountSub || "WORTH"}
+                                    </span>
+                                  </div>
+                                  <h3 className="mt-1 text-base sm:text-lg font-bold text-foreground">
+                                    {rew.title}
+                                  </h3>
                                   <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
                                     {rew.description}
                                   </p>
-                                )}
+                                </div>
                               </div>
-                            </div>
-
-                            {rew.badge && (
                               <div className="shrink-0 flex items-center">
-                                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-                                  <Award className="size-3.5 text-amber-400" />
-                                  {rew.badge}
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-300 shadow-glow-soft">
+                                  <Trophy className="size-4 text-amber-400" />
+                                  {rew.badge || "Certificate"}
                                 </span>
                               </div>
-                            )}
+                            </div>
                           </div>
-                        </div>
+                        ) : (
+                          <div
+                            key={rew.title}
+                            className="rounded-2xl sm:rounded-3xl border border-blue-500/35 bg-gradient-to-br from-blue-500/10 via-surface to-surface p-5 sm:p-6 transition hover:border-blue-400/60 shadow-sm"
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                              <div className="flex items-center gap-4 sm:gap-5">
+                                <div className="size-14 sm:size-16 rounded-2xl bg-gradient-to-br from-blue-500/25 to-indigo-600/20 border border-blue-400/40 flex items-center justify-center shrink-0 shadow-[0_0_15px_rgba(59,130,246,0.25)]">
+                                  <Award className="size-7 sm:size-8 text-blue-400" />
+                                </div>
+                                <div>
+                                  <h3 className="text-base sm:text-lg font-bold text-foreground">{rew.title}</h3>
+                                  {rew.description && (
+                                    <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
+                                      {rew.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="shrink-0 flex items-center">
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-400/40 bg-blue-400/10 px-3.5 py-1.5 text-xs font-bold text-blue-300">
+                                  <CheckCircle2 className="size-3.5 text-blue-400" />
+                                  {rew.badge || "Certificate"}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )
                       ))}
 
                       {item.rewardsFootnote && (
-                        <p className="mt-3 text-xs text-muted-foreground/80 italic">
-                          {item.rewardsFootnote}
+                        <p className="mt-4 text-xs font-medium text-muted-foreground/90 italic flex items-center gap-2">
+                          <span className="size-1.5 rounded-full bg-neon shrink-0" />
+                          <span>{item.rewardsFootnote}</span>
                         </p>
                       )}
                     </div>
@@ -473,29 +547,35 @@ function OpportunityDetails() {
                     /* Fallback for items with prize */
                     <div className="space-y-4">
                       {item.prize && (
-                        <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-6 transition hover:border-neon/40 hover:shadow-glow-soft">
-                          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-emerald-400 via-neon to-emerald-500" />
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                        <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/15 via-surface to-surface p-6 sm:p-7 shadow-[0_0_30px_rgba(245,158,11,0.15)] transition hover:border-amber-400">
+                          <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-amber-400 via-yellow-300 to-amber-500" />
+                          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
                             <div className="flex items-center gap-4 sm:gap-6">
-                              <div className="flex flex-col shrink-0 min-w-[130px] sm:min-w-[160px]">
-                                <span className="text-2xl sm:text-3xl font-extrabold text-neon font-mono tracking-tight">
-                                  {item.prize}
-                                </span>
-                                <span className="text-[11px] font-bold tracking-widest text-emerald-400 uppercase">
-                                  TOTAL PRIZE POOL
-                                </span>
+                              <div className="relative shrink-0">
+                                <img
+                                  src="/events/prize-trophy-badge.png"
+                                  alt="Prize Trophy"
+                                  className="h-20 sm:h-24 w-auto object-contain drop-shadow-[0_8px_20px_rgba(245,158,11,0.5)]"
+                                />
                               </div>
-                              <div className="hidden sm:block h-12 w-px bg-border" />
-                              <div>
-                                <h3 className="text-base sm:text-lg font-bold text-foreground">Cash Prizes & Recognition</h3>
+                              <div className="flex flex-col">
+                                <div className="flex items-baseline gap-2">
+                                  <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-amber-400 font-mono tracking-tight drop-shadow-[0_2px_10px_rgba(245,158,11,0.3)]">
+                                    {item.prize}
+                                  </span>
+                                  <span className="text-xs sm:text-sm font-extrabold tracking-widest text-amber-300 uppercase">
+                                    TOTAL PRIZE POOL
+                                  </span>
+                                </div>
+                                <h3 className="mt-1 text-base sm:text-lg font-bold text-foreground">Cash Prizes & Recognition</h3>
                                 <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
                                   Awarded to winning innovators, finalist teams, and category champions.
                                 </p>
                               </div>
                             </div>
                             <div className="shrink-0 flex items-center">
-                              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted-foreground">
-                                <Award className="size-3.5 text-amber-400" />
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-300 shadow-glow-soft">
+                                <Trophy className="size-4 text-amber-400" />
                                 Certificate & Awards
                               </span>
                             </div>
