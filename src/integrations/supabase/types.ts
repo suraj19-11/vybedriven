@@ -21,6 +21,7 @@ export type Database = {
           college_or_company: string
           created_at: string
           display_name: string
+          email: string | null
           github_url: string | null
           headline: string
           id: string
@@ -39,6 +40,7 @@ export type Database = {
           college_or_company?: string
           created_at?: string
           display_name?: string
+          email?: string | null
           github_url?: string | null
           headline?: string
           id: string
@@ -57,6 +59,7 @@ export type Database = {
           college_or_company?: string
           created_at?: string
           display_name?: string
+          email?: string | null
           github_url?: string | null
           headline?: string
           id?: string

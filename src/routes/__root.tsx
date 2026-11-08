@@ -202,9 +202,10 @@ function RootComponent() {
 
   useEffect(() => {
     let active = true;
-    supabase.auth.getUser().then(({ data }) => {
+    // Instant local session restoration (0ms blocking latency)
+    supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
-      const currentUser = data.user ?? null;
+      const currentUser = data.session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
         fetchProfile(currentUser.id).finally(() => {
