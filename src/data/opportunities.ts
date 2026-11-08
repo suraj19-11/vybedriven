@@ -55,6 +55,134 @@ export type Opportunity = {
 
 export const opportunities: Opportunity[] = [
   {
+    slug: "goa-buildathon-2027",
+    title: "Goa Buildathon '27",
+    type: "Hackathon",
+    tag: "36-Hour Offline Hackathon · AI & Emerging Tech",
+    description: "36-hour offline hackathon in Goa, India bringing together developers, designers, AI builders and innovators to turn ideas into reality. ₹10,00,000 worth prize pool.",
+    date: "Jan 16–17, 2027 · 36 Hours Offline",
+    location: "Goa, India (South Goa)",
+    format: "In person",
+    prize: "₹10,00,000 Worth",
+    perks: [
+      {
+        icon: "gift",
+        emoji: "💰",
+        title: "₹10,00,000 Worth Prize Pool",
+        description: "Targeting an overall prize pool of ₹10,00,000 for top winning teams and category champions.",
+      },
+      {
+        icon: "award",
+        emoji: "📜",
+        title: "Participation Certificate",
+        description: "Official certificate of participation released for all attending builders and teams.",
+      },
+      {
+        icon: "rocket",
+        emoji: "⚡",
+        title: "36-Hour Offline Hackathon",
+        description: "36 hours of non-stop offline building in Goa with developer mentors, food, and high energy.",
+      },
+      {
+        icon: "brain",
+        emoji: "🤖",
+        title: "AI Agents & Emerging Tech",
+        description: "Hands-on tracks for AI agents, web apps, automation workflows, data science, and hardware.",
+      },
+      {
+        icon: "handshake",
+        emoji: "🤝",
+        title: "Platform Partner: Vybe Driven",
+        description: "Official technology and platform partner support powering discovery across India.",
+      },
+      {
+        icon: "coffee",
+        emoji: "🌴",
+        title: "Goa Builder Community",
+        description: "Connect with mentors, judges, founders, and cross-college tech communities in Goa.",
+      },
+    ],
+    image: "/events/goa-buildathon-2027.jpg",
+    imageFit: "contain",
+    imagePosition: "center center",
+    organizer: "Goa Buildathon · Vybe Driven (Platform & Technology Partner)",
+    registrationDeadline: "Dec 31, 2026 · 12:59 PM IST",
+    eligibility: "Students, aspiring developers, designers, AI builders and technology enthusiasts across all colleges",
+    teamSize: "2–4 Members",
+    fee: "Free",
+    status: "Registration open",
+    registrationUrl: "https://goabuilds.com/",
+    registrationNote: "Idea Submission (PPT Round) deadline is 31 Dec 2026. Register now to secure your team slot.",
+    groupUrl: "https://chat.whatsapp.com/BPxJPtcClTECc4f09doPpd?s=cl&p=i&mlu=4&ilr=4&iam=2",
+    groupLabel: "Join WhatsApp Community",
+    contacts: [
+      { name: "Goa Buildathon Desk", phone: "hello@goabuilds.com" },
+      { name: "Vybe Driven Support", phone: "vybedriven@gmail.com" },
+    ],
+    relatedLinks: [
+      { label: "Official Website (goabuilds.com)", url: "https://goabuilds.com/" },
+      { label: "Official WhatsApp Community", url: "https://chat.whatsapp.com/BPxJPtcClTECc4f09doPpd?s=cl&p=i&mlu=4&ilr=4&iam=2" },
+      { label: "Instagram @goabuildathon27", url: "https://www.instagram.com/goabuildathon27" },
+    ],
+    overview: `GOA BUILDATHON ’27 is a 36-hour offline hackathon planned for January 2027 in Goa, India. It aims to bring together developers, designers, AI enthusiasts, problem-solvers and innovators from colleges and communities to turn ideas into working solutions.
+
+This is where ideas move beyond discussions and become prototypes. Whether you're exploring AI agents, developing web applications, automating everyday workflows or experimenting with emerging technologies, GOA BUILDATHON ’27 is designed to give you the space to build, collaborate and challenge yourself.
+
+Our vision is to create an environment where students can experiment with new technologies, solve meaningful problems, learn from experienced builders and connect with people who share the same passion for creating.
+
+Not just another hackathon. A place to turn ideas into reality.
+
+What To Expect:
+• 36 hours of offline building in Goa
+• Collaboration with developers, designers and innovators
+• Hands-on experimentation with AI, AI agents and automation
+• Web development, software engineering and emerging technology
+• Teamwork, rapid prototyping and practical problem-solving
+• Opportunities to connect with mentors, judges and technology communities
+• Project showcases and opportunities to present your ideas
+• Community partnerships and potential sponsor-led challenges
+• An environment focused on learning, creativity and building real solutions
+
+Who Can Participate?:
+GOA BUILDATHON ’27 welcomes students, aspiring developers, designers, AI builders and technology enthusiasts who want to learn by building. Whether you're an experienced hackathon participant or attending your first hackathon, the focus is on curiosity, collaboration and the willingness to create something meaningful. Bring your skills, find teammates, explore unfamiliar technologies and turn your ideas into something people can experience.
+
+What Can You Build?:
+• Artificial Intelligence & AI Agents: Build intelligent assistants, agentic workflows and practical AI-powered applications.
+• Web Development: Create websites, platforms and full-stack applications that address real problems.
+• Automation: Develop tools that reduce repetitive work and improve everyday processes.
+• Data Science & Analytics: Turn data into insights, useful tools and better decisions.
+• Software & Developer Tools: Build products that improve workflows, productivity and collaboration.
+• Electronics & Emerging Technology: Explore innovative solutions that connect software with the physical world.
+
+The goal is not simply to present an idea, but to make meaningful progress towards a working solution within the hackathon.
+
+Why Goa?:
+Goa offers a distinctive setting for bringing people together to learn, collaborate and create. GOA BUILDATHON ’27 aims to combine the energy of a technology-building event with a community-driven experience where new connections and ideas can grow. We want participants to leave with more than a project: new skills, valuable connections, practical experience and the confidence to keep building.
+
+Official Channels & Contact:
+• Website: https://goabuilds.com/
+• Email: hello@goabuilds.com
+• WhatsApp: https://chat.whatsapp.com/BPxJPtcClTECc4f09doPpd
+• Instagram: https://www.instagram.com/goabuildathon27
+• Platform & Technology Partner: Vybe Driven (vybedriven.in)
+
+Be Part Of The Build:
+We're bringing together people who don't just want to talk about ideas — they want to build them. Build > Collaborate > Create real impact. Let's build something that matters.`,
+    schedule: [
+      {
+        title: "Stage 1: Idea Submission — PPT Round",
+        date: "Nov 2, 2026 – Dec 31, 2026 (12:59 PM IST)",
+        description: "Participants submit a PPT explaining their proposed solution to a real-world problem (Problem statement, Proposed solution, Innovation, Target users, Tech stack, Implementation plan).",
+      },
+      {
+        title: "Stage 2: 36-Hour Hackathon — Grand Finale",
+        date: "Jan 16, 2027 (09:00 AM) – Jan 17, 2027 (04:25 PM IST)",
+        description: "Shortlisted teams build a working prototype, collaborate with other developers and present their projects to the judging panel live in Goa.",
+      },
+    ],
+  },
+
+  {
     slug: "luminar-creators-award-2027",
     title: "Luminar Creators Award 2027",
     type: "Competition",

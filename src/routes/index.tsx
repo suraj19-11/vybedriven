@@ -24,7 +24,7 @@ export const Route = createFileRoute("/")({
     meta: [
       { title: "Vybe Driven (Vybe) — Discover Nearest Hackathons, Coding Competitions & Tech Events in India" },
       { name: "description", content: "Discover nearest hackathons, coding competitions and technology summits in Mumbai and across India on Vybe Driven (Vybe / Vibe Driven). Connect with ambitious builders, win cash prizes, and build what's next." },
-      { name: "keywords", content: "vybe driven, vybe, vibe driven, vibe, vybedriven, nearest hackathon, hackathons near me, hackathons in mumbai, hackathons in india, student hackathons, coding competitions, upcoming hackathons 2026, upcoming hackathons 2027, tech events mumbai, luminar creators award, idea competition" },
+      { name: "keywords", content: "vybe driven, vybe, vibe driven, vibe, vybedriven, goa buildathon 2027, goa buildathon, nearest hackathon, hackathons near me, hackathons in mumbai, hackathons in india, student hackathons, coding competitions, upcoming hackathons 2026, upcoming hackathons 2027, tech events mumbai, luminar creators award, idea competition" },
       { name: "author", content: "Vybe Driven" },
       { name: "robots", content: "index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" },
       { property: "og:site_name", content: "Vybe Driven" },
@@ -366,7 +366,7 @@ function Partners() {
 
 function Events() {
   const [f, setF] = useState<HomeFilter>("All");
-  const featured = opportunities.find((item) => item.slug === "idea-competition-2026");
+  const featured = opportunities.find((item) => item.slug === "goa-buildathon-2027") ?? opportunities[0];
   const featuredLuminar = opportunities.find((item) => item.slug === "luminar-creators-award-2027");
   if (!featured) return null;
   const list = opportunities
@@ -394,14 +394,19 @@ function Events() {
       <Reveal className="mt-8 sm:mt-10">
         <article className="group grid overflow-hidden rounded-2xl sm:rounded-3xl border border-neon/25 bg-surface shadow-glow-soft md:grid-cols-[0.95fr_1.05fr]">
           <div className="relative flex items-center justify-center overflow-hidden bg-black/60 p-4 sm:p-6 min-h-[300px] sm:min-h-[380px] md:min-h-[460px]">
-            <img src={featured.image} alt={featured.title} loading="eager" width={819} height={1024} className="h-full max-h-[460px] w-auto max-w-full object-contain transition duration-700 group-hover:scale-[1.02]" />
+            <img src={featured.image} alt={featured.title} loading="eager" width={969} height={1024} className="h-full max-h-[460px] w-auto max-w-full object-contain transition duration-700 group-hover:scale-[1.02]" />
             <div className="pointer-events-none absolute inset-0 hidden md:block bg-gradient-to-r from-transparent via-transparent to-surface/80" />
-            <span className="absolute left-4 top-4 sm:left-5 sm:top-5 rounded-full bg-neon px-3 py-1 text-xs font-bold text-primary-foreground shadow-glow-soft">FEATURED</span>
+            <span className="absolute left-4 top-4 sm:left-5 sm:top-5 rounded-full bg-neon px-3 py-1 text-xs font-bold text-primary-foreground shadow-glow-soft">FEATURED HACKATHON</span>
           </div>
           <div className="flex flex-col justify-center p-5 sm:p-8 md:p-10">
-            <p className="text-xs font-semibold tracking-[0.18em] text-neon">{featured.tag.toUpperCase()}</p>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-semibold tracking-[0.18em] text-neon">{featured.tag.toUpperCase()}</span>
+              <span className="rounded-full border border-neon/40 bg-neon/10 px-2.5 py-0.5 text-[11px] font-semibold text-neon">
+                Platform &amp; Tech Partner: Vybe Driven
+              </span>
+            </div>
             <h3 className="mt-2.5 sm:mt-3 text-2xl min-[400px]:text-3xl sm:text-4xl font-extrabold tracking-tight">{featured.title}</h3>
-            <p className="mt-2.5 sm:mt-3 text-sm text-muted-foreground">{featured.description}</p>
+            <p className="mt-2.5 sm:mt-3 text-sm text-muted-foreground leading-relaxed">{featured.description}</p>
             <div className="mt-5 sm:mt-6 space-y-2 text-xs sm:text-sm">
               <p className="flex items-center gap-2"><Globe className="size-4 text-neon" /> {featured.format} · {featured.location}</p>
               <p className="flex items-center gap-2"><Calendar className="size-4 text-neon" /> {featured.date}</p>
@@ -422,9 +427,9 @@ function Events() {
             )}
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3">
               {featured.registrationUrl ? (
-                <a href={featured.registrationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-gradient-brand px-6 py-3.5 text-sm font-semibold text-primary-foreground transition hover:brightness-110 hover:shadow-glow">Register now <ArrowRight className="size-4" /></a>
+                <a href={featured.registrationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-gradient-brand px-6 py-3.5 text-sm font-semibold text-primary-foreground transition hover:brightness-110 hover:shadow-glow">Register Now <ArrowRight className="size-4" /></a>
               ) : null}
-              <Link to="/opportunities/$slug" params={{ slug: featured.slug }} className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border border-neon/40 bg-surface/80 px-6 py-3.5 text-sm font-semibold text-neon transition hover:border-neon hover:bg-neon/15 hover:shadow-glow-soft">Explore Event</Link>
+              <Link to="/opportunities/$slug" params={{ slug: featured.slug }} className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border border-neon/40 bg-surface/80 px-6 py-3.5 text-sm font-semibold text-neon transition hover:border-neon hover:bg-neon/15 hover:shadow-glow-soft">Explore Hackathon</Link>
             </div>
           </div>
         </article>

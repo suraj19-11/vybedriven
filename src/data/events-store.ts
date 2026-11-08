@@ -9,6 +9,7 @@ import elevatePoster from "@/assets/events/elevate-1-0-2026.png.asset.json";
 import { useEffect, useState } from "react";
 
 export const PRESET_EVENT_BANNERS = [
+  { id: "goa", title: "Goa Buildathon '27", image: "/events/goa-buildathon-2027.jpg" },
   { id: "luminar", title: "Luminar Creators Award Gala", image: "/events/luminar-creators-award-2027.jpg" },
   { id: "cyber", title: "Cyber & Security Matrix", image: evCyber },
   { id: "code", title: "Code & Hack Sprint", image: evCool },

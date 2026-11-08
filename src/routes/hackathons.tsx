@@ -7,7 +7,7 @@ export const Route = createFileRoute("/hackathons")({
     meta: [
       { title: "Nearest Hackathons & Competitions in India (2026–2027) — Vybe Driven (Vybe)" },
       { name: "description", content: "Explore the nearest hackathons and coding competitions on Vybe Driven (Vybe). Find 24h college hackathons, AI challenges, and startup sprints in Mumbai, Pune, Bangalore & all-India." },
-      { name: "keywords", content: "nearest hackathon, hackathons near me, hackathons in mumbai, hackathons in india 2026, upcoming hackathons 2027, coding competitions, student hackathons, college hackathons, vybe driven, vybe, vibe driven, vibe" },
+      { name: "keywords", content: "goa buildathon 2027, goa buildathon, nearest hackathon, hackathons near me, hackathons in mumbai, hackathons in goa, hackathons in india 2026, upcoming hackathons 2027, 36 hour hackathon, coding competitions, student hackathons, college hackathons, vybe driven, vybe, vibe driven, vibe" },
       { property: "og:title", content: "Nearest Hackathons & Competitions in India — Vybe Driven" },
       { property: "og:description", content: "Explore the nearest hackathons and coding competitions on Vybe Driven (Vybe). Turn your code into cash prizes, internships & startup incubation." },
       { property: "og:type", content: "website" },

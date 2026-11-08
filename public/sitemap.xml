@@ -43,6 +43,16 @@
 
   <!-- Featured & High-Intent Hackathons & Competitions -->
   <url>
+    <loc>https://www.vybedriven.in/opportunities/goa-buildathon-2027</loc>
+    <lastmod>2026-11-08</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.95</priority>
+    <image:image>
+      <image:loc>https://www.vybedriven.in/events/goa-buildathon-2027.jpg</image:loc>
+      <image:title>Goa Buildathon 2027 — 36-Hour Offline Hackathon in Goa, India</image:title>
+    </image:image>
+  </url>
+  <url>
     <loc>https://www.vybedriven.in/opportunities/luminar-creators-award-2027</loc>
     <lastmod>2026-11-07</lastmod>
     <changefreq>daily</changefreq>
@@ -153,3 +163,4 @@
     <priority>0.70</priority>
   </url>
 </urlset>
+
