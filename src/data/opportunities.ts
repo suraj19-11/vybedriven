@@ -22,6 +22,24 @@ export type OpportunityPerk = {
   description?: string;
 };
 
+export type OpportunityScheduleStage = {
+  title: string;
+  date: string;
+  dateBadge?: string;
+  description: string;
+  bullets?: string[];
+  evaluation?: string;
+};
+
+export type OpportunityReward = {
+  amount?: string;
+  amountSub?: string;
+  title: string;
+  description?: string;
+  badge?: string;
+  type?: "cash" | "certificate" | "perk";
+};
+
 export type Opportunity = {
   slug: string;
   title: string;
@@ -170,16 +188,44 @@ Be Part Of The Build:
 We're bringing together people who don't just want to talk about ideas — they want to build them. Build > Collaborate > Create real impact. Let's build something that matters.`,
     schedule: [
       {
-        title: "Stage 1: Idea Submission — PPT Round",
-        date: "Nov 2, 2026 – Dec 31, 2026 (12:59 PM IST)",
-        description: "Participants submit a PPT explaining their proposed solution to a real-world problem (Problem statement, Proposed solution, Innovation, Target users, Tech stack, Implementation plan).",
+        title: "Idea Submission — PPT Round",
+        dateBadge: "Nov 2",
+        date: "02 Nov 26, 10:20 PM IST → 31 Dec 26, 12:59 PM IST",
+        description: "Participants submit a PPT explaining their proposed solution to a real-world problem. PPT should include:",
+        bullets: [
+          "Problem statement",
+          "Proposed solution",
+          "Innovation and uniqueness",
+          "Target users and expected impact",
+          "Proposed technology stack",
+          "Implementation plan",
+        ],
+        evaluation: "Innovation, feasibility, relevance, impact and technical approach.",
       },
       {
-        title: "Stage 2: 36-Hour Hackathon — Grand Finale",
-        date: "Jan 16, 2027 (09:00 AM) – Jan 17, 2027 (04:25 PM IST)",
+        title: "36-Hour Hackathon — Grand Finale",
+        dateBadge: "Jan 16",
+        date: "16 Jan 27, 09:00 AM IST → 17 Jan 27, 04:25 PM IST",
         description: "Shortlisted teams build a working prototype, collaborate with other developers and present their projects to the judging panel live in Goa.",
       },
     ],
+    rewards: [
+      {
+        amount: "₹10,00,000",
+        amountSub: "WORTH",
+        title: "Overall Prize Pool",
+        description: "GOA BUILDATHON '27 is targeting a total prize pool of ₹10,00,000. The final prize distribution and rewards will be announced once confirmed. Stay tuned for updates.",
+        badge: "Certificate",
+        type: "cash",
+      },
+      {
+        title: "Participation Certificate",
+        description: "Official certificate of participation released for all attending builders and teams.",
+        badge: "Certificate",
+        type: "certificate",
+      },
+    ],
+    rewardsFootnote: "* All the prizes and certificate will be released within 30 days after the event is over",
   },
 
   {

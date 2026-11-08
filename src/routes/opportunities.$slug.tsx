@@ -81,6 +81,103 @@ export const Route = createFileRoute("/opportunities/$slug")({
   notFoundComponent: OpportunityNotFound,
 });
 
+function FormattedOverview({ overview }: { overview: string }) {
+  const sections = overview.split(/\n\n+/);
+  return (
+    <div className="space-y-5 max-w-3xl text-sm sm:text-base leading-relaxed text-muted-foreground">
+      {sections.map((sec, idx) => {
+        const lines = sec.trim().split("\n");
+        const firstLine = lines[0].trim();
+
+        const isHeading =
+          lines.length > 1 &&
+          (firstLine.endsWith(":") || firstLine.startsWith("###") || firstLine.startsWith("**"));
+
+        if (isHeading) {
+          const headingText = firstLine.replace(/^[#*]+/, "").replace(/[*:]+$/, "").trim();
+          const restLines = lines.slice(1);
+          return (
+            <div key={idx} className="pt-2">
+              <h3 className="text-base sm:text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+                <span className="size-1.5 rounded-full bg-neon shrink-0" />
+                <span>{headingText}</span>
+              </h3>
+              <div className="space-y-2">
+                {restLines.map((line, lIdx) => {
+                  const trimmed = line.trim();
+                  if (trimmed.startsWith("•") || trimmed.startsWith("-") || trimmed.startsWith("*")) {
+                    const cleanText = trimmed.replace(/^[•\-*]\s*/, "");
+                    const colonIndex = cleanText.indexOf(":");
+                    return (
+                      <div key={lIdx} className="flex items-start gap-2.5 text-xs sm:text-sm pl-2 text-foreground/90">
+                        <span className="mt-2 size-1 rounded-full bg-neon/80 shrink-0" />
+                        <span>
+                          {colonIndex > 0 ? (
+                            <>
+                              <strong className="font-semibold text-foreground">
+                                {cleanText.slice(0, colonIndex + 1)}
+                              </strong>
+                              {cleanText.slice(colonIndex + 1)}
+                            </>
+                          ) : (
+                            cleanText
+                          )}
+                        </span>
+                      </div>
+                    );
+                  }
+                  return (
+                    <p key={lIdx} className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                      {line}
+                    </p>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        }
+
+        const isBulletList = lines.every((l) => {
+          const t = l.trim();
+          return t.startsWith("•") || t.startsWith("-") || t.startsWith("*") || /^\d+[.)]/.test(t);
+        });
+
+        if (isBulletList) {
+          return (
+            <ul key={idx} className="space-y-2 pl-2 my-2">
+              {lines.map((l, lIdx) => {
+                const clean = l.trim().replace(/^[•\-*]\s*|^\d+[.)]\s*/, "");
+                const colonIndex = clean.indexOf(":");
+                return (
+                  <li key={lIdx} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/90">
+                    <span className="mt-2 size-1.5 rounded-full bg-neon shrink-0" />
+                    <span>
+                      {colonIndex > 0 ? (
+                        <>
+                          <strong className="font-semibold text-foreground">{clean.slice(0, colonIndex + 1)}</strong>
+                          {clean.slice(colonIndex + 1)}
+                        </>
+                      ) : (
+                        clean
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          );
+        }
+
+        return (
+          <p key={idx} className="text-sm sm:text-base leading-relaxed text-muted-foreground">
+            {sec}
+          </p>
+        );
+      })}
+    </div>
+  );
+}
+
 function OpportunityDetails() {
   const item = Route.useLoaderData();
   const search = Route.useSearch();
@@ -237,65 +334,181 @@ function OpportunityDetails() {
 
               {/* About Section */}
               <section className="py-7 sm:py-9">
-                <h2 className="text-xl sm:text-2xl font-bold">About this {item.type.toLowerCase()}</h2>
-                <p className="mt-3 sm:mt-4 max-w-3xl text-sm sm:text-base leading-relaxed text-muted-foreground">
-                  {item.overview}
-                </p>
+                <div className="flex items-center gap-2.5 mb-5">
+                  <span className="h-6 w-1 rounded-full bg-neon shadow-glow-soft" />
+                  <h2 className="text-xl sm:text-2xl font-bold text-foreground">
+                    All that you need to know about {item.title}
+                  </h2>
+                </div>
+                <FormattedOverview overview={item.overview} />
               </section>
 
               {/* Stages and Timeline */}
               {item.schedule && item.schedule.length > 0 && (
-                <section className="border-t border-border py-7 sm:py-9">
-                  <h2 className="text-xl sm:text-2xl font-bold">Stages and timeline</h2>
-                  <ol className="mt-6 space-y-5">
+                <section className="border-t border-border py-8 sm:py-10">
+                  <div className="flex items-center gap-2.5 mb-6">
+                    <span className="h-6 w-1 rounded-full bg-neon shadow-glow-soft" />
+                    <h2 className="text-xl sm:text-2xl font-bold text-foreground">Stages and Timelines</h2>
+                  </div>
+
+                  <div className="relative pl-3 sm:pl-5 before:absolute before:left-2 before:top-3 before:bottom-6 before:w-[2px] before:border-l-2 before:border-dashed before:border-border/80">
                     {item.schedule.map((step, index) => (
-                      <li key={step.title} className="grid grid-cols-[36px_1fr] gap-3 sm:gap-4">
-                        <span className="grid size-9 place-items-center rounded-full bg-neon font-bold text-primary-foreground">
-                          {index + 1}
-                        </span>
-                        <div>
-                          <div className="flex flex-wrap items-baseline justify-between gap-1.5 sm:gap-2">
-                            <h3 className="text-sm sm:text-base font-semibold">{step.title}</h3>
-                            <p className="text-xs sm:text-sm font-medium text-neon">{step.date}</p>
+                      <div key={step.title} className="relative pb-8 last:pb-2 pl-4 sm:pl-6">
+                        {/* Timeline Header Badge */}
+                        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 mb-3">
+                          {step.dateBadge && (
+                            <div className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-2.5 py-1 text-xs font-bold text-foreground font-mono shadow-sm">
+                              <Calendar className="size-3.5 text-neon" />
+                              <span>{step.dateBadge}</span>
+                            </div>
+                          )}
+                          <span className="text-xs sm:text-sm font-medium text-muted-foreground font-mono">
+                            {step.date}
+                          </span>
+                        </div>
+
+                        {/* Stage Card */}
+                        <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm transition hover:border-neon/40 hover:shadow-glow-soft">
+                          <div className="flex items-center justify-between gap-2">
+                            <h3 className="text-base sm:text-lg font-bold text-foreground">{step.title}</h3>
+                            <span className="rounded-full bg-neon/10 border border-neon/30 px-2.5 py-0.5 text-[11px] font-semibold text-neon font-mono shrink-0">
+                              Stage {index + 1}
+                            </span>
                           </div>
-                          <p className="mt-1 text-xs sm:text-sm leading-relaxed text-muted-foreground">
+
+                          <p className="mt-2 text-xs sm:text-sm leading-relaxed text-muted-foreground">
                             {step.description}
                           </p>
+
+                          {step.bullets && step.bullets.length > 0 && (
+                            <ul className="mt-3.5 space-y-1.5 pl-1">
+                              {step.bullets.map((b) => (
+                                <li key={b} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/90">
+                                  <span className="mt-1.5 size-1.5 rounded-full bg-neon shrink-0" />
+                                  <span>{b}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+
+                          {step.evaluation && (
+                            <div className="mt-4 rounded-xl border border-border/80 bg-surface/70 px-4 py-2.5 text-xs text-muted-foreground">
+                              <span className="font-bold text-foreground">Evaluation: </span>
+                              <span>{step.evaluation}</span>
+                            </div>
+                          )}
                         </div>
-                      </li>
+                      </div>
                     ))}
-                  </ol>
+                  </div>
                 </section>
               )}
 
               {/* Rewards, Perks & Opportunities */}
-              {(item.prize || (item.perks && item.perks.length > 0)) && (
-                <section className="border-t border-border py-8 sm:py-12">
-                  <div className="flex items-center gap-3">
-                    <span className="grid size-11 place-items-center rounded-2xl bg-neon/15 text-neon shadow-glow-soft">
-                      <Trophy className="size-6 text-neon" />
-                    </span>
-                    <div>
-                      <p className="text-xs font-semibold tracking-wider uppercase text-neon">What's in Store</p>
-                      <h2 className="mt-0.5 text-xl sm:text-2xl font-bold">Rewards, Perks & Opportunities</h2>
-                    </div>
+              {(item.rewards || item.prize || (item.perks && item.perks.length > 0)) && (
+                <section className="border-t border-border py-8 sm:py-10">
+                  <div className="flex items-center gap-2.5 mb-6">
+                    <span className="h-6 w-1 rounded-full bg-neon shadow-glow-soft" />
+                    <h2 className="text-xl sm:text-2xl font-bold text-foreground">Rewards and Prizes</h2>
                   </div>
 
-                  {item.prize && (
-                    <div className="mt-5 rounded-2xl border border-neon/30 bg-gradient-to-br from-neon/10 via-surface to-surface p-5 sm:p-6 shadow-glow-soft">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        Total Prize Pool
-                      </p>
-                      <p className="mt-1 text-2xl sm:text-4xl font-extrabold text-neon">{item.prize}</p>
-                      <p className="mt-2 text-xs sm:text-sm text-muted-foreground">
-                        Cash prizes, certificates, and recognition for top qualifying innovators.
-                      </p>
+                  {item.rewards && item.rewards.length > 0 ? (
+                    <div className="space-y-4">
+                      {item.rewards.map((rew) => (
+                        <div
+                          key={rew.title}
+                          className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-6 transition hover:border-neon/40 hover:shadow-glow-soft"
+                        >
+                          {rew.type === "cash" && (
+                            <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-emerald-400 via-neon to-emerald-500" />
+                          )}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-4 sm:gap-6">
+                              {rew.amount ? (
+                                <div className="flex flex-col shrink-0 min-w-[130px] sm:min-w-[160px]">
+                                  <span className="text-2xl sm:text-3xl font-extrabold text-neon font-mono tracking-tight">
+                                    {rew.amount}
+                                  </span>
+                                  <span className="text-[11px] font-bold tracking-widest text-emerald-400 uppercase">
+                                    {rew.amountSub || "WORTH"}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="size-12 sm:size-14 rounded-2xl bg-gradient-to-br from-blue-500/15 via-surface to-indigo-500/10 border border-blue-500/25 flex items-center justify-center shrink-0 shadow-sm">
+                                  <Gift className="size-6 text-blue-400" />
+                                </div>
+                              )}
+
+                              {rew.amount && <div className="hidden sm:block h-12 w-px bg-border" />}
+
+                              <div>
+                                <h3 className="text-base sm:text-lg font-bold text-foreground">{rew.title}</h3>
+                                {rew.description && (
+                                  <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
+                                    {rew.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            {rew.badge && (
+                              <div className="shrink-0 flex items-center">
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+                                  <Award className="size-3.5 text-amber-400" />
+                                  {rew.badge}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+
+                      {item.rewardsFootnote && (
+                        <p className="mt-3 text-xs text-muted-foreground/80 italic">
+                          {item.rewardsFootnote}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    /* Fallback for items with prize */
+                    <div className="space-y-4">
+                      {item.prize && (
+                        <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-5 sm:p-6 transition hover:border-neon/40 hover:shadow-glow-soft">
+                          <div className="absolute left-0 top-0 bottom-0 w-1.5 bg-gradient-to-b from-emerald-400 via-neon to-emerald-500" />
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex items-center gap-4 sm:gap-6">
+                              <div className="flex flex-col shrink-0 min-w-[130px] sm:min-w-[160px]">
+                                <span className="text-2xl sm:text-3xl font-extrabold text-neon font-mono tracking-tight">
+                                  {item.prize}
+                                </span>
+                                <span className="text-[11px] font-bold tracking-widest text-emerald-400 uppercase">
+                                  TOTAL PRIZE POOL
+                                </span>
+                              </div>
+                              <div className="hidden sm:block h-12 w-px bg-border" />
+                              <div>
+                                <h3 className="text-base sm:text-lg font-bold text-foreground">Cash Prizes & Recognition</h3>
+                                <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
+                                  Awarded to winning innovators, finalist teams, and category champions.
+                                </p>
+                              </div>
+                            </div>
+                            <div className="shrink-0 flex items-center">
+                              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-muted-foreground">
+                                <Award className="size-3.5 text-amber-400" />
+                                Certificate & Awards
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
 
+                  {/* Extra Perks Grid */}
                   {item.perks && item.perks.length > 0 && (
-                    <div className="mt-6">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                    <div className="mt-8 pt-6 border-t border-border/70">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-4">
                         Participant Benefits & Perks
                       </p>
                       <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
