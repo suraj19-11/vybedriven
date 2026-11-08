@@ -407,10 +407,22 @@ function Events() {
             </div>
             <h3 className="mt-2.5 sm:mt-3 text-2xl min-[400px]:text-3xl sm:text-4xl font-extrabold tracking-tight">{featured.title}</h3>
             <p className="mt-2.5 sm:mt-3 text-sm text-muted-foreground leading-relaxed">{featured.description}</p>
-            <div className="mt-5 sm:mt-6 space-y-2 text-xs sm:text-sm">
-              <p className="flex items-center gap-2"><Globe className="size-4 text-neon" /> {featured.format} · {featured.location}</p>
-              <p className="flex items-center gap-2"><Calendar className="size-4 text-neon" /> {featured.date}</p>
-              <p className="flex items-center gap-2"><Trophy className="size-4 text-neon" /> {featured.prize} Prize Pool</p>
+            <div className="mt-5 sm:mt-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-neon/30 bg-surface-2/60 p-3.5 sm:p-4">
+              <div className="space-y-1.5 text-xs sm:text-sm">
+                <p className="flex items-center gap-2 text-muted-foreground"><Globe className="size-4 text-neon" /> {featured.format} · {featured.location}</p>
+                <p className="flex items-center gap-2 text-muted-foreground"><Calendar className="size-4 text-neon" /> {featured.date}</p>
+                <p className="flex items-center gap-2 font-bold text-foreground">
+                  <Trophy className="size-4 text-amber-400" />
+                  <span className="text-neon font-mono text-sm sm:text-base">{featured.prize}</span> Total Prize Pool
+                </p>
+              </div>
+              <div className="relative shrink-0 flex items-center justify-center self-center sm:self-auto">
+                <img
+                  src="/events/golden-star-trophy.png"
+                  alt="Golden Star Trophy"
+                  className="h-16 sm:h-20 w-auto object-contain drop-shadow-[0_4px_16px_rgba(250,204,21,0.4)]"
+                />
+              </div>
             </div>
             {featured.perks && featured.perks.length > 0 && (
               <div className="mt-5 pt-4 border-t border-border/70">

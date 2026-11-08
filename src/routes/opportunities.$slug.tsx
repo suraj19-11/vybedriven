@@ -87,120 +87,122 @@ function FormattedOverview({ overview }: { overview: string }) {
   const [expanded, setExpanded] = useState(false);
   const sections = overview.split(/\n\n+/);
   return (
-    <div className="relative">
-      <div
-        className={`space-y-5 max-w-3xl text-sm sm:text-base leading-relaxed text-muted-foreground transition-all duration-300 ${
-          !expanded ? "max-h-[300px] overflow-hidden" : ""
-        }`}
-      >
-        {sections.map((sec, idx) => {
-          const lines = sec.trim().split("\n");
-          const firstLine = lines[0].trim();
+    <div className="space-y-4 max-w-3xl">
+      <div className="relative">
+        <div
+          className={`space-y-5 text-sm sm:text-base leading-relaxed text-muted-foreground transition-all duration-300 ${
+            !expanded ? "max-h-[300px] overflow-hidden" : ""
+          }`}
+        >
+          {sections.map((sec, idx) => {
+            const lines = sec.trim().split("\n");
+            const firstLine = lines[0].trim();
 
-          const isHeading =
-            lines.length > 1 &&
-            (firstLine.endsWith(":") || firstLine.startsWith("###") || firstLine.startsWith("**"));
+            const isHeading =
+              lines.length > 1 &&
+              (firstLine.endsWith(":") || firstLine.startsWith("###") || firstLine.startsWith("**"));
 
-          if (isHeading) {
-            const headingText = firstLine.replace(/^[#*]+/, "").replace(/[*:]+$/, "").trim();
-            const restLines = lines.slice(1);
-            return (
-              <div key={idx} className="pt-2">
-                <h3 className="text-base sm:text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-                  <span className="size-1.5 rounded-full bg-neon shrink-0" />
-                  <span>{headingText}</span>
-                </h3>
-                <div className="space-y-2">
-                  {restLines.map((line, lIdx) => {
-                    const trimmed = line.trim();
-                    if (trimmed.startsWith("•") || trimmed.startsWith("-") || trimmed.startsWith("*")) {
-                      const cleanText = trimmed.replace(/^[•\-*]\s*/, "");
-                      const colonIndex = cleanText.indexOf(":");
+            if (isHeading) {
+              const headingText = firstLine.replace(/^[#*]+/, "").replace(/[*:]+$/, "").trim();
+              const restLines = lines.slice(1);
+              return (
+                <div key={idx} className="pt-2">
+                  <h3 className="text-base sm:text-lg font-bold text-foreground mb-3 flex items-center gap-2">
+                    <span className="size-1.5 rounded-full bg-neon shrink-0" />
+                    <span>{headingText}</span>
+                  </h3>
+                  <div className="space-y-2">
+                    {restLines.map((line, lIdx) => {
+                      const trimmed = line.trim();
+                      if (trimmed.startsWith("•") || trimmed.startsWith("-") || trimmed.startsWith("*")) {
+                        const cleanText = trimmed.replace(/^[•\-*]\s*/, "");
+                        const colonIndex = cleanText.indexOf(":");
+                        return (
+                          <div key={lIdx} className="flex items-start gap-2.5 text-xs sm:text-sm pl-2 text-foreground/90">
+                            <span className="mt-2 size-1 rounded-full bg-neon/80 shrink-0" />
+                            <span>
+                              {colonIndex > 0 ? (
+                                <>
+                                  <strong className="font-semibold text-foreground">
+                                    {cleanText.slice(0, colonIndex + 1)}
+                                  </strong>
+                                  {cleanText.slice(colonIndex + 1)}
+                                </>
+                              ) : (
+                                cleanText
+                              )}
+                            </span>
+                          </div>
+                        );
+                      }
                       return (
-                        <div key={lIdx} className="flex items-start gap-2.5 text-xs sm:text-sm pl-2 text-foreground/90">
-                          <span className="mt-2 size-1 rounded-full bg-neon/80 shrink-0" />
-                          <span>
-                            {colonIndex > 0 ? (
-                              <>
-                                <strong className="font-semibold text-foreground">
-                                  {cleanText.slice(0, colonIndex + 1)}
-                                </strong>
-                                {cleanText.slice(colonIndex + 1)}
-                              </>
-                            ) : (
-                              cleanText
-                            )}
-                          </span>
-                        </div>
+                        <p key={lIdx} className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+                          {line}
+                        </p>
                       );
-                    }
+                    })}
+                  </div>
+                </div>
+              );
+            }
+
+            const isBulletList = lines.every((l) => {
+              const t = l.trim();
+              return t.startsWith("•") || t.startsWith("-") || t.startsWith("*") || /^\d+[.)]/.test(t);
+            });
+
+            if (isBulletList) {
+              return (
+                <ul key={idx} className="space-y-2 pl-2 my-2">
+                  {lines.map((l, lIdx) => {
+                    const clean = l.trim().replace(/^[•\-*]\s*|^\d+[.)]\s*/, "");
+                    const colonIndex = clean.indexOf(":");
                     return (
-                      <p key={lIdx} className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
-                        {line}
-                      </p>
+                      <li key={lIdx} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/90">
+                        <span className="mt-2 size-1.5 rounded-full bg-neon shrink-0" />
+                        <span>
+                          {colonIndex > 0 ? (
+                            <>
+                              <strong className="font-semibold text-foreground">{clean.slice(0, colonIndex + 1)}</strong>
+                              {clean.slice(colonIndex + 1)}
+                            </>
+                          ) : (
+                            clean
+                          )}
+                        </span>
+                      </li>
                     );
                   })}
-                </div>
-              </div>
-            );
-          }
+                </ul>
+              );
+            }
 
-          const isBulletList = lines.every((l) => {
-            const t = l.trim();
-            return t.startsWith("•") || t.startsWith("-") || t.startsWith("*") || /^\d+[.)]/.test(t);
-          });
-
-          if (isBulletList) {
             return (
-              <ul key={idx} className="space-y-2 pl-2 my-2">
-                {lines.map((l, lIdx) => {
-                  const clean = l.trim().replace(/^[•\-*]\s*|^\d+[.)]\s*/, "");
-                  const colonIndex = clean.indexOf(":");
-                  return (
-                    <li key={lIdx} className="flex items-start gap-2.5 text-xs sm:text-sm text-foreground/90">
-                      <span className="mt-2 size-1.5 rounded-full bg-neon shrink-0" />
-                      <span>
-                        {colonIndex > 0 ? (
-                          <>
-                            <strong className="font-semibold text-foreground">{clean.slice(0, colonIndex + 1)}</strong>
-                            {clean.slice(colonIndex + 1)}
-                          </>
-                        ) : (
-                          clean
-                        )}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
+              <p key={idx} className="text-sm sm:text-base leading-relaxed text-muted-foreground">
+                {sec}
+              </p>
             );
-          }
+          })}
+        </div>
 
-          return (
-            <p key={idx} className="text-sm sm:text-base leading-relaxed text-muted-foreground">
-              {sec}
-            </p>
-          );
-        })}
+        {!expanded && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-background via-background/80 to-transparent" />
+        )}
       </div>
 
-      {!expanded && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-background via-background/90 to-transparent" />
-      )}
-
-      <div className="mt-4 pt-1 flex items-center justify-start">
+      <div className="pt-2 flex items-center justify-start">
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          className="inline-flex items-center gap-1.5 rounded-full border border-neon/50 bg-surface/90 px-4 py-1.5 text-xs font-semibold text-neon transition hover:border-neon hover:bg-neon hover:text-primary-foreground shadow-glow-soft cursor-pointer"
+          className="inline-flex items-center gap-2 rounded-full bg-neon px-5 py-2.5 text-xs sm:text-sm font-bold text-primary-foreground shadow-glow hover:brightness-110 active:scale-95 transition-all cursor-pointer"
         >
           {expanded ? (
             <>
-              Show less <ChevronUp className="size-3.5" />
+              Show Less <ChevronUp className="size-4" />
             </>
           ) : (
             <>
-              Read more <ChevronDown className="size-3.5" />
+              Read More Details <ChevronDown className="size-4" />
             </>
           )}
         </button>
@@ -337,21 +339,31 @@ function OpportunityDetails() {
                 Hosted by <span className="font-semibold text-foreground">{item.organizer}</span>
               </p>
 
-              {/* Unstop-style Top Prize & Trophy Banner */}
+              {/* Top Prize & Trophy Banner */}
               {item.prize && (
-                <div className="mt-5 inline-flex items-center gap-3 sm:gap-4 rounded-2xl border border-sky-400/35 bg-gradient-to-r from-sky-500/15 via-cyan-500/10 to-transparent p-2.5 sm:p-3 pr-4 sm:pr-5 shadow-glow-soft">
-                  <div className="pl-1">
-                    <p className="text-[11px] font-bold uppercase tracking-wider text-sky-400">Prizes worth</p>
-                    <p className="text-xl min-[400px]:text-2xl sm:text-3xl font-extrabold text-foreground font-mono tracking-tight">
-                      {item.prize}
-                    </p>
+                item.slug === "goa-buildathon-2027" ? (
+                  <div className="mt-5 inline-block">
+                    <img
+                      src="/events/prizes-worth-banner.jpg"
+                      alt="Prizes Worth ₹ 10,00,000"
+                      className="h-auto max-w-full sm:max-w-md md:max-w-lg rounded-2xl border border-neon/40 shadow-glow-soft hover:shadow-glow transition"
+                    />
                   </div>
-                  <img
-                    src="/events/prize-trophy-badge.png"
-                    alt="Prize Trophy"
-                    className="h-12 min-[400px]:h-14 sm:h-16 w-auto object-contain shrink-0 drop-shadow-[0_4px_14px_rgba(250,204,21,0.45)]"
-                  />
-                </div>
+                ) : (
+                  <div className="mt-5 inline-flex items-center gap-3 sm:gap-4 rounded-2xl border border-neon/35 bg-gradient-to-r from-neon/15 via-emerald-500/10 to-transparent p-2.5 sm:p-3 pr-4 sm:pr-5 shadow-glow-soft">
+                    <div className="pl-1">
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-neon">Prizes worth</p>
+                      <p className="text-xl min-[400px]:text-2xl sm:text-3xl font-extrabold text-foreground font-mono tracking-tight">
+                        {item.prize}
+                      </p>
+                    </div>
+                    <img
+                      src="/events/golden-star-trophy.png"
+                      alt="Prize Trophy"
+                      className="h-12 min-[400px]:h-14 sm:h-16 w-auto object-contain shrink-0 drop-shadow-[0_4px_14px_rgba(250,204,21,0.45)]"
+                    />
+                  </div>
+                )
               )}
             </div>
             <img
@@ -476,7 +488,7 @@ function OpportunityDetails() {
                               <div className="flex items-center gap-4 sm:gap-6">
                                 <div className="relative shrink-0">
                                   <img
-                                    src="/events/prize-trophy-badge.png"
+                                    src="/events/golden-star-trophy.png"
                                     alt="Grand Prize Trophy"
                                     className="h-20 sm:h-24 w-auto object-contain drop-shadow-[0_8px_20px_rgba(245,158,11,0.5)]"
                                   />
@@ -553,7 +565,7 @@ function OpportunityDetails() {
                             <div className="flex items-center gap-4 sm:gap-6">
                               <div className="relative shrink-0">
                                 <img
-                                  src="/events/prize-trophy-badge.png"
+                                  src="/events/golden-star-trophy.png"
                                   alt="Prize Trophy"
                                   className="h-20 sm:h-24 w-auto object-contain drop-shadow-[0_8px_20px_rgba(245,158,11,0.5)]"
                                 />
