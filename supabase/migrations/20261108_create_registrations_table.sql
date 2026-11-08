@@ -52,3 +52,4 @@ CREATE POLICY "Allow update registrations" ON public.registrations
 -- Grant full access to anon and authenticated roles
 GRANT ALL ON public.registrations TO anon;
 GRANT ALL ON public.registrations TO authenticated;
+
