@@ -174,6 +174,32 @@ function AuthPage() {
     sessionStorage.setItem("hd-auth-next", search.next);
 
     try {
+      // Check if Google OAuth provider is enabled in this Supabase project
+      const SUPABASE_URL =
+        import.meta.env["VITE_SUPABASE_URL"] ||
+        "https://awsbphlfpbwfrbhqxgdu.supabase.co";
+      const SUPABASE_KEY =
+        import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ||
+        "sb_publishable_X_94L6qKscKYIWw9Cof-CQ_BeMheTY0";
+
+      try {
+        const settingsRes = await fetch(`${SUPABASE_URL}/auth/v1/settings`, {
+          headers: { apikey: SUPABASE_KEY },
+        });
+        if (settingsRes.ok) {
+          const settings = await settingsRes.json();
+          if (settings.external && settings.external.google === false) {
+            setBusy(false);
+            setError(
+              "Google Sign-In is currently disabled in your Supabase project (needs Google Client ID). Please sign in or create an account with Email & Password below!"
+            );
+            return;
+          }
+        }
+      } catch {
+        // Fallback to normal flow
+      }
+
       const redirectTo = `${window.location.origin}/auth`;
       const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
         provider: "google",
