@@ -158,7 +158,13 @@ export function EventRegistrationModal({
 
       if (signInErr) {
         setAuthBusy(false);
-        setAuthError(signInErr.message);
+        if (signInErr.message.toLowerCase().includes("email not confirmed")) {
+          setAuthError(
+            "⚠️ Your email address is not verified yet. Please check your inbox and spam folder for the confirmation link to activate your account."
+          );
+        } else {
+          setAuthError(signInErr.message);
+        }
         return;
       }
 

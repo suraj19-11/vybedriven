@@ -106,65 +106,40 @@ function AuthPage() {
       }
 
       try {
-        // Fast instant signup via pre-confirmed API
-        let registered = false;
-        try {
-          const res = await fetch("/api/auth/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: email.trim(),
-              password,
-              fullName: name.trim() || undefined,
-            }),
-          });
-          const resData = await res.json();
-          if (res.ok) {
-            registered = true;
-          } else if (resData?.error && !resData.error.toLowerCase().includes("already")) {
-            setBusy(false);
-            setError(resData.error);
-            return;
-          }
-        } catch {
-          // Fall back to standard Supabase signup if API route is unavailable
-        }
-
-        // Sign in immediately with credentials
-        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
+        const { data: signUpData, error: authError } = await supabase.auth.signUp({
           email: email.trim(),
           password,
+          options: {
+            data: { full_name: name.trim() || undefined },
+            emailRedirectTo: `${window.location.origin}/auth?next=${encodeURIComponent(search.next)}`,
+          },
         });
 
-        if (signInErr) {
-          // If sign in with password failed and user wasn't created via API, try standard signup
-          if (!registered) {
-            const { data: signUpData, error: authError } = await supabase.auth.signUp({
-              email: email.trim(),
-              password,
-              options: {
-                data: { full_name: name.trim() || undefined },
-              },
+        setBusy(false);
+        if (authError) {
+          setError(authError.message);
+          return;
+        }
+
+        if (!signUpData.session) {
+          setMessage(
+            `📩 Verification link sent to ${email.trim()}! Please click the confirmation link in your email to activate your account and access your event registrations.`
+          );
+          return;
+        }
+
+        if (signUpData.user && name.trim()) {
+          try {
+            await supabase.from("profiles").upsert({
+              id: signUpData.user.id,
+              display_name: name.trim(),
+              updated_at: new Date().toISOString(),
             });
-            if (authError) {
-              setBusy(false);
-              setError(authError.message);
-              return;
-            }
-            if (!signUpData.session) {
-              setBusy(false);
-              setMessage("Account created! You can now sign in.");
-              setMode("signin");
-              return;
-            }
-          } else {
-            setBusy(false);
-            setError(signInErr.message);
-            return;
+          } catch {
+            // Non-blocking
           }
         }
 
-        setBusy(false);
         await navigate({ to: search.next, replace: true });
       } catch (err: unknown) {
         setBusy(false);
@@ -182,7 +157,13 @@ function AuthPage() {
 
       setBusy(false);
       if (authError) {
-        setError(authError.message);
+        if (authError.message.toLowerCase().includes("email not confirmed")) {
+          setError(
+            "⚠️ Your email is not verified yet. Please check your inbox (and Spam folder) for the verification email, or click 'Resend Verification' below."
+          );
+        } else {
+          setError(authError.message);
+        }
         return;
       }
 
@@ -190,6 +171,34 @@ function AuthPage() {
     } catch (err: unknown) {
       setBusy(false);
       setError(err instanceof Error ? err.message : "An unexpected sign-in error occurred.");
+    }
+  };
+
+  const handleResendEmail = async () => {
+    if (!email.trim() || !email.includes("@")) {
+      setError("Please enter your email address to resend verification link.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    setMessage("");
+    try {
+      const { error: resendErr } = await supabase.auth.resend({
+        type: "signup",
+        email: email.trim(),
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth?next=${encodeURIComponent(search.next)}`,
+        },
+      });
+      setBusy(false);
+      if (resendErr) {
+        setError(resendErr.message);
+      } else {
+        setMessage(`Verification link resent to ${email.trim()}! Check your inbox and spam folder.`);
+      }
+    } catch (err: unknown) {
+      setBusy(false);
+      setError(err instanceof Error ? err.message : "Failed to resend verification email.");
     }
   };
 
@@ -449,7 +458,17 @@ function AuthPage() {
 
             {error && (
               <div role="alert" className="rounded-xl border border-destructive/30 bg-destructive/10 px-3.5 py-2.5 text-xs sm:text-sm text-destructive">
-                {error}
+                <p>{error}</p>
+                {error.includes("not verified") && (
+                  <button
+                    type="button"
+                    onClick={handleResendEmail}
+                    disabled={busy}
+                    className="mt-2 inline-flex items-center gap-1 text-xs font-bold text-neon underline hover:brightness-110"
+                  >
+                    Resend verification link to {email || "your email"}
+                  </button>
+                )}
               </div>
             )}
 
