@@ -266,6 +266,89 @@ function ProfileMenu() {
   );
 }
 
+function NewUserWelcomePrompt() {
+  const { user, loading } = useAuth();
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (loading || user) {
+      setVisible(false);
+      return;
+    }
+    const dismissed =
+      typeof window !== "undefined" &&
+      sessionStorage.getItem("vd-welcome-prompt-dismissed");
+    if (!dismissed) {
+      const timer = setTimeout(() => {
+        setVisible(true);
+      }, 2500);
+      return () => clearTimeout(timer);
+    }
+  }, [user, loading]);
+
+  const handleDismiss = () => {
+    setVisible(false);
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("vd-welcome-prompt-dismissed", "true");
+    }
+  };
+
+  if (!visible || user) return null;
+
+  return (
+    <aside
+      aria-label="Welcome prompt"
+      className="fixed bottom-4 right-4 z-50 max-w-sm w-[calc(100vw-32px)] rounded-2xl border border-neon/40 bg-[#070d09]/95 p-4 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <span className="flex size-7 items-center justify-center rounded-lg bg-neon/15 text-neon text-sm font-bold shadow-glow-soft">
+            ⚡
+          </span>
+          <div>
+            <h4 className="text-xs sm:text-sm font-bold text-foreground">
+              Join Vybe Driven!
+            </h4>
+            <p className="text-[11px] text-muted-foreground">
+              20,000+ builders across India
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={handleDismiss}
+          className="text-muted-foreground hover:text-foreground transition p-0.5 rounded-lg"
+          aria-label="Dismiss"
+        >
+          <X className="size-4" />
+        </button>
+      </div>
+
+      <p className="mt-2.5 text-xs text-muted-foreground leading-relaxed">
+        Sign in or create your builder account to register for hackathons, form squads, and access your event tickets.
+      </p>
+
+      <div className="mt-3.5 flex items-center gap-2">
+        <Link
+          to="/auth"
+          search={{
+            mode: "signup",
+            next: typeof window !== "undefined" ? window.location.pathname : "/",
+          }}
+          className="flex-1 rounded-full bg-neon px-4 py-2 text-center text-xs font-bold text-primary-foreground shadow-glow-soft hover:brightness-105 transition"
+        >
+          Sign In / Join Free
+        </Link>
+        <button
+          onClick={handleDismiss}
+          className="rounded-full border border-border bg-surface px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-foreground transition"
+        >
+          Later
+        </button>
+      </div>
+    </aside>
+  );
+}
+
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const { user, profile, loading } = useAuth();
@@ -440,6 +523,9 @@ export function Navbar() {
           </div>
         </div>
       )}
+
+      {/* Global Welcome Prompt for unauthenticated visitors */}
+      <NewUserWelcomePrompt />
     </header>
   );
 }

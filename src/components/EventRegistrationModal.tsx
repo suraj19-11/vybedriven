@@ -26,7 +26,9 @@ import {
   Phone,
   Mail,
   User,
+  Lock,
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import type { Opportunity } from "@/data/opportunities";
 import {
@@ -93,6 +95,87 @@ export function EventRegistrationModal({
   // Submitting & Confirmed state
   const [submitting, setSubmitting] = useState(false);
   const [confirmedReg, setConfirmedReg] = useState<EventRegistration | null>(null);
+
+  // Inline Auth State for unauthenticated visitors
+  const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authName, setAuthName] = useState("");
+  const [authPhone, setAuthPhone] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [authError, setAuthError] = useState("");
+
+  const handleInlineAuth = async (e: FormEvent) => {
+    e.preventDefault();
+    setAuthBusy(true);
+    setAuthError("");
+
+    if (!authEmail.trim() || !authEmail.includes("@")) {
+      setAuthBusy(false);
+      setAuthError("Please enter a valid email address.");
+      return;
+    }
+    if (!authPassword || authPassword.length < 6) {
+      setAuthBusy(false);
+      setAuthError("Password must be at least 6 characters.");
+      return;
+    }
+
+    try {
+      if (authMode === "signup") {
+        if (!authName.trim()) {
+          setAuthBusy(false);
+          setAuthError("Please enter your Full Name.");
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: authEmail.trim(),
+              password: authPassword,
+              fullName: authName.trim(),
+              phone: authPhone.trim() || undefined,
+            }),
+          });
+          const resData = await res.json();
+          if (!res.ok && resData?.error && !resData.error.toLowerCase().includes("already")) {
+            setAuthBusy(false);
+            setAuthError(resData.error);
+            return;
+          }
+        } catch {
+          // Fallback to direct sign-in
+        }
+      }
+
+      const { data, error: signInErr } = await supabase.auth.signInWithPassword({
+        email: authEmail.trim(),
+        password: authPassword,
+      });
+
+      if (signInErr) {
+        setAuthBusy(false);
+        setAuthError(signInErr.message);
+        return;
+      }
+
+      toast.success("Signed in successfully! Let's complete your registration.");
+      setAuthBusy(false);
+
+      const names = (authName || data.user.user_metadata?.["full_name"] || authEmail.split("@")[0]).trim().split(" ");
+      setFirstName(names[0] || "");
+      setLastName(names.slice(1).join(" ") || "");
+      setEmail(authEmail.trim());
+      if (authPhone.trim()) setPhone(authPhone.trim());
+      setStep(1);
+    } catch (err: unknown) {
+      setAuthBusy(false);
+      setAuthError(err instanceof Error ? err.message : "Authentication error.");
+    }
+  };
 
   // Check if existing registration exists
   const existingRegistrations = getRegistrationsBySlug(opportunity.slug);
@@ -360,8 +443,144 @@ Platform Support: vybedriven@gmail.com
           )}
         </DialogHeader>
 
+        {/* AUTH REQUIRED IF NOT LOGGED IN */}
+        {!user && step !== 3 ? (
+          <div className="mt-4 space-y-5 text-xs sm:text-sm">
+            <div className="rounded-2xl border border-neon/40 bg-neon/5 p-4 sm:p-5">
+              <div className="flex items-center gap-2.5 text-neon font-bold text-sm sm:text-base">
+                <Lock className="size-5 shrink-0" />
+                <span>Login or Sign Up Required to Register</span>
+              </div>
+              <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
+                To link your registration with your profile, access your team roster, and view your entry pass, please sign in or create an account below.
+              </p>
+            </div>
+
+            {/* Toggle Switcher */}
+            <div className="flex rounded-xl border border-border bg-surface p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode("signin");
+                  setAuthError("");
+                }}
+                className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition ${
+                  authMode === "signin"
+                    ? "bg-neon/15 text-neon border border-neon/30 shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode("signup");
+                  setAuthError("");
+                }}
+                className={`flex-1 rounded-lg py-2 text-center text-xs font-bold transition ${
+                  authMode === "signup"
+                    ? "bg-neon/15 text-neon border border-neon/30 shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Create Account (Instant)
+              </button>
+            </div>
+
+            {authError && (
+              <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                {authError}
+              </div>
+            )}
+
+            <form onSubmit={handleInlineAuth} className="space-y-4">
+              {authMode === "signup" && (
+                <>
+                  <div>
+                    <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                      Full Name <span className="text-neon">*</span>
+                    </label>
+                    <input
+                      required
+                      type="text"
+                      value={authName}
+                      onChange={(e) => setAuthName(e.target.value)}
+                      placeholder="e.g. Satyam Pandey"
+                      className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                      Mobile Number <span className="text-neon">*</span>
+                    </label>
+                    <input
+                      required
+                      type="tel"
+                      value={authPhone}
+                      onChange={(e) => setAuthPhone(e.target.value)}
+                      placeholder="+91 9876543210"
+                      className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
+                    />
+                  </div>
+                </>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                  Email Address <span className="text-neon">*</span>
+                </label>
+                <input
+                  required
+                  type="email"
+                  value={authEmail}
+                  onChange={(e) => setAuthEmail(e.target.value)}
+                  placeholder="yourname@gmail.com"
+                  className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                  Password <span className="text-neon">*</span>
+                </label>
+                <input
+                  required
+                  type="password"
+                  value={authPassword}
+                  onChange={(e) => setAuthPassword(e.target.value)}
+                  placeholder="At least 6 characters"
+                  className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-between gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => onOpenChange(false)}
+                  className="rounded-full border-border text-xs"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={authBusy}
+                  className="rounded-full bg-neon text-primary-foreground font-bold shadow-glow-soft hover:brightness-105 text-xs sm:text-sm flex-1 sm:flex-initial px-6"
+                >
+                  {authBusy
+                    ? "Please wait..."
+                    : authMode === "signin"
+                    ? "Sign In & Proceed"
+                    : "Create Account & Proceed"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        ) : null}
+
         {/* STEP 1: BASIC & USER DETAILS */}
-        {step === 1 && (
+        {user && step === 1 && (
           <form onSubmit={handleProceedToTeam} className="mt-4 space-y-5 text-xs sm:text-sm">
             <div>
               <h3 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
@@ -581,7 +800,7 @@ Platform Support: vybedriven@gmail.com
         )}
 
         {/* STEP 2: TEAM SETUP & SQUAD FORMATION */}
-        {step === 2 && (
+        {user && step === 2 && (
           <form onSubmit={handleFinalSubmit} className="mt-4 space-y-5 text-xs sm:text-sm">
             {/* Important Notes Banner */}
             <div className="rounded-2xl border border-sky-400/35 bg-gradient-to-r from-sky-500/15 via-surface to-surface p-4">

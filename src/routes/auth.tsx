@@ -106,39 +106,65 @@ function AuthPage() {
       }
 
       try {
-        const { data, error: authError } = await supabase.auth.signUp({
+        // Fast instant signup via pre-confirmed API
+        let registered = false;
+        try {
+          const res = await fetch("/api/auth/register", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              email: email.trim(),
+              password,
+              fullName: name.trim() || undefined,
+            }),
+          });
+          const resData = await res.json();
+          if (res.ok) {
+            registered = true;
+          } else if (resData?.error && !resData.error.toLowerCase().includes("already")) {
+            setBusy(false);
+            setError(resData.error);
+            return;
+          }
+        } catch {
+          // Fall back to standard Supabase signup if API route is unavailable
+        }
+
+        // Sign in immediately with credentials
+        const { data: signInData, error: signInErr } = await supabase.auth.signInWithPassword({
           email: email.trim(),
           password,
-          options: {
-            data: { full_name: name.trim() || undefined },
-            emailRedirectTo: `${window.location.origin}/auth?next=${encodeURIComponent(search.next)}`,
-          },
         });
 
-        setBusy(false);
-        if (authError) {
-          setError(authError.message);
-          return;
-        }
-
-        if (!data.session) {
-          setMessage("Account created! If email confirmation is required, please check your inbox to verify before signing in.");
-          return;
-        }
-
-        // If session created, pre-populate profile display name if entered
-        if (data.user && name.trim()) {
-          try {
-            await supabase.from("profiles").upsert({
-              id: data.user.id,
-              display_name: name.trim(),
-              updated_at: new Date().toISOString(),
+        if (signInErr) {
+          // If sign in with password failed and user wasn't created via API, try standard signup
+          if (!registered) {
+            const { data: signUpData, error: authError } = await supabase.auth.signUp({
+              email: email.trim(),
+              password,
+              options: {
+                data: { full_name: name.trim() || undefined },
+              },
             });
-          } catch {
-            // Non-blocking
+            if (authError) {
+              setBusy(false);
+              setError(authError.message);
+              return;
+            }
+            if (!signUpData.session) {
+              setBusy(false);
+              setMessage("Account created! You can now sign in.");
+              setMode("signin");
+              return;
+            }
+          } else {
+            setBusy(false);
+            setError(signInErr.message);
+            return;
           }
         }
 
+        setBusy(false);
         await navigate({ to: search.next, replace: true });
       } catch (err: unknown) {
         setBusy(false);
