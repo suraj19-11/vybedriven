@@ -266,53 +266,13 @@ function ProfilePage() {
           </div>
         </div>
 
-        {/* Profile Tabs Navigation */}
-        <div className="mt-8 flex flex-wrap gap-2 border-b border-border pb-3">
-          <button
-            type="button"
-            onClick={() => setActiveTab("profile")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
-              activeTab === "profile"
-                ? "bg-neon text-primary-foreground shadow-glow-soft"
-                : "text-muted-foreground hover:bg-surface hover:text-foreground"
-            }`}
-          >
-            <User className="size-4" />
-            <span>Profile Details</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("hosted")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
-              activeTab === "hosted"
-                ? "bg-neon text-primary-foreground shadow-glow-soft"
-                : "text-muted-foreground hover:bg-surface hover:text-foreground"
-            }`}
-          >
-            <Users className="size-4" />
-            <span>Events Hosted by Me ({myHostedEvents.length})</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActiveTab("registrations")}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-xs sm:text-sm font-semibold transition ${
-              activeTab === "registrations"
-                ? "bg-neon text-primary-foreground shadow-glow-soft"
-                : "text-muted-foreground hover:bg-surface hover:text-foreground"
-            }`}
-          >
-            <Ticket className="size-4" />
-            <span>My Registrations ({myRegistrations.length})</span>
-          </button>
-
-          <div className="ml-auto">
-            <Button asChild size="sm" className="rounded-full bg-gradient-brand text-primary-foreground text-xs font-bold hover:brightness-105 shadow-glow-soft">
-              <Link to="/host">
-                <PlusCircle className="size-3.5 mr-1" /> Host New Event
-              </Link>
-            </Button>
+        {/* Profile Details Header */}
+        <div className="mt-8 flex items-center justify-between border-b border-border pb-3">
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-2 rounded-xl bg-neon px-4 py-2 text-xs sm:text-sm font-semibold text-primary-foreground shadow-glow-soft">
+              <User className="size-4" />
+              <span>Builder Profile Details</span>
+            </span>
           </div>
         </div>
 

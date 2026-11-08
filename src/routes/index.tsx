@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import {
-  ArrowRight, Users, Calendar, Trophy, Radio, MapPin, Search, UsersRound, Rocket, LineChart,
-  Swords, Award, Zap, Globe, Activity, Code2, Sparkles,
+  ArrowRight, Calendar, Trophy, MapPin, Globe, Sparkles,
 } from "lucide-react";
 import { Navbar, Footer } from "@/components/SiteChrome";
 import { Reveal, Eyebrow, PrimaryBtn, GhostBtn } from "@/components/ui-hd";
@@ -97,11 +96,8 @@ function Index() {
       <Navbar />
       <main>
         <Hero />
-        <Stats />
         <Partners />
         <Events />
-        <Features />
-        <Why />
         <Community />
         <CTA />
       </main>
@@ -157,174 +153,9 @@ function Hero() {
           </p>
           <div className="mt-7 sm:mt-9 flex flex-col min-[480px]:flex-row gap-3 w-full sm:w-auto">
             <PrimaryBtn href="/hackathons" className="w-full min-[480px]:w-auto justify-center">Explore Hackathons <ArrowRight className="size-4" /></PrimaryBtn>
-            <GhostBtn href="/host" className="hero-ghost w-full min-[480px]:w-auto justify-center">Host an Event</GhostBtn>
           </div>
         </div>
       </div>
-    </section>
-  );
-}
-
-function AnimatedCounter({ end, prefix = "", suffix = "", duration = 1800 }: { end: number; prefix?: string; suffix?: string; duration?: number }) {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLSpanElement>(null);
-  const started = useRef(false);
-
-  useEffect(() => {
-    if (!ref.current) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const entry = entries[0];
-        if (entry?.isIntersecting && !started.current) {
-          started.current = true;
-          const startTime = performance.now();
-          const step = (currentTime: number) => {
-            const elapsed = currentTime - startTime;
-            const progress = Math.min(elapsed / duration, 1);
-            const ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
-            setCount(Math.floor(ease * end));
-            if (progress < 1) {
-              requestAnimationFrame(step);
-            } else {
-              setCount(end);
-            }
-          };
-          requestAnimationFrame(step);
-        }
-      },
-      { threshold: 0.15 }
-    );
-
-    observer.observe(ref.current);
-    return () => observer.disconnect();
-  }, [end, duration]);
-
-  return (
-    <span ref={ref} className="tabular-nums font-black">
-      {prefix}{count}{suffix}
-    </span>
-  );
-}
-
-function Stats() {
-  const statsList = [
-    {
-      num: 20,
-      suffix: "K+",
-      prefix: "",
-      title: "Community Members",
-      description: "Students & working professionals active across top tech domains.",
-      badge: "ACTIVE BUILDERS",
-      icon: Users,
-    },
-    {
-      num: 100,
-      suffix: "+",
-      prefix: "",
-      title: "Tech Events Hosted",
-      description: "Workshops, hands-on meetups, and developer conferences.",
-      badge: "HOSTED & SPRINTED",
-      icon: Calendar,
-    },
-    {
-      num: 30,
-      suffix: "+",
-      prefix: "",
-      title: "Hackathons Organized",
-      description: "National, collegiate, and regional competitive hackathons.",
-      badge: "FLAGSHIP SPRINTS",
-      icon: Swords,
-    },
-    {
-      num: 500,
-      suffix: "K+",
-      prefix: "₹",
-      title: "Prize Pool Awarded",
-      description: "Direct cash bounties, grants, and ecosystem reward pools.",
-      badge: "TOTAL REWARDS",
-      icon: Trophy,
-    },
-  ];
-
-  return (
-    <section className="relative z-20 mx-auto max-w-[1280px] px-3 sm:px-6 pt-2 sm:pt-6 pb-6 sm:pb-8">
-      <Reveal>
-        <div className="stats-laser-border">
-          <div className="relative rounded-[calc(1.5rem-1.5px)] bg-[#070d08]/95 p-4 sm:p-7 backdrop-blur-2xl">
-            {/* Ambient inner neon glow */}
-            <div className="pointer-events-none absolute -right-16 -top-16 size-60 rounded-full bg-neon/10 blur-3xl" />
-            <div className="pointer-events-none absolute -bottom-16 -left-16 size-60 rounded-full bg-lime/10 blur-3xl" />
-
-            {/* High-Tech Telemetry Header */}
-            <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 border-b border-border/60 pb-3.5 sm:pb-4">
-              <div className="flex items-center gap-2.5">
-                <span className="relative flex size-2.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-neon opacity-80" />
-                  <span className="relative inline-flex size-2.5 rounded-full bg-neon" />
-                </span>
-                <span className="text-[11px] sm:text-xs font-black uppercase tracking-[0.16em] sm:tracking-[0.2em] text-neon">
-                  Vybe Driven Impact Metrics
-                </span>
-              </div>
-              <div className="flex items-center gap-2 sm:gap-3 text-[10px] sm:text-[11px] font-mono tracking-wider text-muted-foreground">
-                <span className="inline-block size-1.5 rounded-full bg-neon/60" />
-                <span>ECOSYSTEM STATS</span>
-                <span>· ALL-INDIA NETWORK</span>
-              </div>
-            </div>
-
-            {/* 4 Futuristic Stat Pods */}
-            <div className="relative mt-4 sm:mt-5 grid grid-cols-1 gap-3 sm:gap-4 min-[520px]:grid-cols-2 lg:grid-cols-4">
-              {statsList.map((stat) => {
-                const Icon = stat.icon;
-                return (
-                  <div
-                    key={stat.title}
-                    className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-border/80 bg-surface/60 p-4 sm:p-6 transition-all duration-300 hover:-translate-y-1 hover:border-neon/50 hover:bg-surface/90 hover:shadow-[0_0_28px_rgba(57,255,20,0.18)]"
-                  >
-                    {/* Hover glow orb */}
-                    <div className="pointer-events-none absolute -right-8 -top-8 size-28 rounded-full bg-neon/0 blur-2xl transition-all duration-300 group-hover:bg-neon/15" />
-
-                    <div>
-                      {/* Card top row: Icon + Micro-tag */}
-                      <div className="flex items-center justify-between gap-3">
-                        <div className="grid size-11 sm:size-12 shrink-0 place-items-center rounded-xl border border-neon/30 bg-neon/10 text-neon transition-all duration-300 group-hover:scale-110 group-hover:bg-neon group-hover:text-black group-hover:shadow-[0_0_20px_rgba(57,255,20,0.45)]">
-                          <Icon className="size-5 sm:size-6" />
-                        </div>
-                        <span className="rounded-full border border-neon/20 bg-neon/5 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neon">
-                          {stat.badge}
-                        </span>
-                      </div>
-
-                      {/* Number value with animated counter */}
-                      <div className="mt-4 sm:mt-5">
-                        <div className="text-3xl sm:text-4xl font-black tracking-tight text-white transition-colors duration-200 group-hover:text-neon">
-                          <AnimatedCounter
-                            end={stat.num}
-                            prefix={stat.prefix}
-                            suffix={stat.suffix}
-                          />
-                        </div>
-                        <p className="mt-1 text-sm sm:text-base font-bold text-foreground">
-                          {stat.title}
-                        </p>
-                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-                          {stat.description}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Bottom active neon indicator line */}
-                    <div className="mt-4 h-[2px] w-full rounded-full bg-border/40 overflow-hidden">
-                      <div className="h-full w-0 bg-gradient-to-r from-neon to-lime transition-all duration-500 group-hover:w-full" />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-      </Reveal>
     </section>
   );
 }
@@ -559,68 +390,6 @@ function Events() {
   );
 }
 
-function Features() {
-  const f = [
-    { i: Search, t: "Discover Events", d: "Browse hackathons and competitions filtered to your stack and interests." },
-    { i: UsersRound, t: "Team Up", d: "Find teammates with complementary skills before the clock starts." },
-    { i: Rocket, t: "Build & Submit", d: "Ship your project and submit demos, repos and decks in one place." },
-    { i: LineChart, t: "Track Progress", d: "Follow milestones, deadlines and judging rounds in real time." },
-    { i: Swords, t: "Compete", d: "Go head to head with the sharpest builders across India and beyond." },
-    { i: Award, t: "Get Recognized", d: "Earn prizes, badges and a profile that recruiters actually look at." },
-  ];
-  return (
-    <section className="mx-auto max-w-[1200px] px-4 sm:px-6 py-10 sm:py-14">
-      <Reveal>
-        <Eyebrow>BUILT FOR BUILDERS</Eyebrow>
-        <h2 className="mt-3 text-3xl font-extrabold leading-[1.04] tracking-tight sm:text-5xl">Everything You Need<br />to <span className="text-gradient">Build What's Next.</span></h2>
-      </Reveal>
-      <div className="mt-8 sm:mt-12 grid gap-3 sm:gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {f.map(({ i: I, t, d }, idx) => (
-          <Reveal key={t} delay={idx * 50}>
-            <div className="group h-full rounded-2xl border border-border bg-surface p-5 sm:p-7 transition hover:border-neon/30">
-              <span className="grid size-11 place-items-center rounded-xl border border-border bg-surface-2 text-neon transition group-hover:bg-neon group-hover:text-primary-foreground"><I className="size-5" /></span>
-              <h3 className="mt-4 sm:mt-5 text-base sm:text-lg font-bold">{t}</h3>
-              <p className="mt-2 text-xs sm:text-sm text-muted-foreground">{d}</p>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function Why() {
-  const w = [
-    { n: "01", i: Zap, t: "Powerful Innovation", d: "Challenges designed with industry partners around problems that matter now." },
-    { n: "02", i: Globe, t: "Open Community", d: "A welcoming place for students, independent builders and working professionals." },
-    { n: "03", i: Activity, t: "Real-Time Experience", d: "Live updates, leaderboards and announcements from kickoff to final demo." },
-    { n: "04", i: Code2, t: "Built for Developers", d: "Clean workflows, GitHub-first submissions and zero unnecessary friction." },
-  ];
-  return (
-    <section className="relative py-10 sm:py-14">
-      <div className="pointer-events-none absolute inset-x-0 top-1/2 mx-auto h-80 max-w-3xl -translate-y-1/2 rounded-full bg-neon/8 blur-[120px]" />
-      <div className="relative mx-auto max-w-[1200px] px-4 sm:px-6">
-        <Reveal className="text-center">
-          <h2 className="text-3xl font-extrabold tracking-tight sm:text-5xl">Why <span className="text-gradient">Vybe Driven?</span></h2>
-          <p className="mx-auto mt-3 sm:mt-4 max-w-xl text-sm sm:text-base text-muted-foreground">More than events. It's an ecosystem built to turn ideas into impact.</p>
-        </Reveal>
-        <div className="mt-8 sm:mt-12 grid gap-4 sm:gap-5 md:grid-cols-2">
-          {w.map(({ n, i: I, t, d }, idx) => (
-            <Reveal key={n} delay={idx * 70}>
-              <div className="relative h-full overflow-hidden rounded-2xl sm:rounded-3xl border border-border bg-gradient-to-br from-surface-2 to-background p-6 sm:p-8 md:p-10">
-                <span className="absolute -right-2 -top-6 text-[84px] sm:text-[140px] font-black leading-none text-neon/10 select-none pointer-events-none">{n}</span>
-                <I className="relative size-6 text-neon" />
-                <h3 className="relative mt-6 sm:mt-8 text-xl sm:text-2xl font-bold">{t}</h3>
-                <p className="relative mt-2 sm:mt-3 max-w-sm text-sm sm:text-base text-muted-foreground">{d}</p>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 function Community() {
   const g = [
     { img: ornateConferenceHall, l: "Grand Tech Summits & Conferences", c: "sm:col-span-2 md:col-span-2 md:row-span-2", position: "center 42%" },
@@ -671,7 +440,6 @@ function CTA() {
             <p className="mx-auto mt-4 sm:mt-5 max-w-lg text-sm sm:text-base text-muted-foreground">Find your next challenge, build with great people and turn your ideas into something real.</p>
             <div className="mt-7 sm:mt-9 flex flex-col justify-center gap-3 sm:flex-row">
               <PrimaryBtn href="/hackathons" className="w-full sm:w-auto justify-center">Explore Hackathons <ArrowRight className="size-4" /></PrimaryBtn>
-              <GhostBtn href="/host" className="w-full sm:w-auto justify-center">Host an Event</GhostBtn>
               <GhostBtn href="/auth?mode=signin&next=%2Fprofile" className="w-full sm:w-auto justify-center">Join Vybe Driven</GhostBtn>
             </div>
           </div>
