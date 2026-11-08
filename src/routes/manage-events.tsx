@@ -551,9 +551,24 @@ function ManageEventsPage() {
                           <td className="px-4 py-3.5 text-xs text-foreground">
                             <div className="flex items-center gap-1.5">
                               <Building2 className="size-3 text-muted-foreground shrink-0" />
-                              <span>{applicant.collegeOrCompany}</span>
+                              <span className="font-medium">{applicant.collegeOrCompany}</span>
+                              {applicant.gender && (
+                                <span className="text-[10px] text-muted-foreground">({applicant.gender})</span>
+                              )}
                             </div>
-                            {applicant.experienceLevel && (
+                            <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                              {applicant.userType && (
+                                <span className="rounded bg-neon/10 px-1.5 py-0.5 text-[10px] font-semibold text-neon">
+                                  {applicant.userType}
+                                </span>
+                              )}
+                              {applicant.location && (
+                                <span className="text-[11px] text-muted-foreground">
+                                  📍 {applicant.location}
+                                </span>
+                              )}
+                            </div>
+                            {applicant.experienceLevel && !applicant.userType && (
                               <span className="mt-1 inline-block rounded bg-surface px-1.5 py-0.5 text-[10px] text-muted-foreground">
                                 {applicant.experienceLevel}
                               </span>
@@ -564,20 +579,42 @@ function ManageEventsPage() {
                           <td className="px-4 py-3.5 text-xs">
                             {applicant.teamType === "team" ? (
                               <div>
-                                <span className="font-semibold text-neon">
-                                  {applicant.teamName}
-                                </span>
-                                <span className="text-muted-foreground ml-1">
-                                  ({applicant.teamSize || "Team"})
-                                </span>
-                                {applicant.teamMembers && (
+                                <div className="flex items-center gap-1.5 flex-wrap">
+                                  <span className="font-semibold text-neon">
+                                    {applicant.teamName}
+                                  </span>
+                                  <span className="text-muted-foreground text-[11px]">
+                                    ({applicant.teammates && applicant.teammates.length > 0 ? `${applicant.teammates.length + 1} Members` : applicant.teamSize || "Team"})
+                                  </span>
+                                  {applicant.lookingForTeammates && (
+                                    <span className="rounded bg-primary/20 px-1 py-0.5 text-[9px] font-bold text-neon">
+                                      Looking for teammates
+                                    </span>
+                                  )}
+                                </div>
+                                {applicant.teammates && applicant.teammates.length > 0 ? (
+                                  <div className="mt-1 space-y-0.5 text-[10px] text-muted-foreground max-w-xs">
+                                    {applicant.teammates.map((m, idx) => (
+                                      <div key={idx} className="truncate">
+                                        • {m.name} ({m.email})
+                                      </div>
+                                    ))}
+                                  </div>
+                                ) : applicant.teamMembers ? (
                                   <p className="mt-0.5 text-[10px] text-muted-foreground max-w-xs">
                                     Members: {applicant.teamMembers}
                                   </p>
-                                )}
+                                ) : null}
                               </div>
                             ) : (
-                              <span className="text-muted-foreground">Solo Entry</span>
+                              <div>
+                                <span className="text-muted-foreground">Solo Entry</span>
+                                {applicant.lookingForTeammates && (
+                                  <span className="ml-1 inline-block rounded bg-primary/20 px-1 py-0.5 text-[9px] font-bold text-neon">
+                                    Looking for teammates
+                                  </span>
+                                )}
+                              </div>
                             )}
                           </td>
 

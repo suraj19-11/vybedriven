@@ -271,7 +271,9 @@ function Events() {
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3">
               {featured.registrationUrl ? (
                 <a href={featured.registrationUrl} target="_blank" rel="noopener noreferrer" className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-gradient-brand px-6 py-3.5 text-sm font-semibold text-primary-foreground transition hover:brightness-110 hover:shadow-glow">Register Now <ArrowRight className="size-4" /></a>
-              ) : null}
+              ) : (
+                <Link to="/opportunities/$slug" params={{ slug: featured.slug }} search={{ register: "1" }} className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full bg-gradient-brand px-6 py-3.5 text-sm font-semibold text-primary-foreground transition hover:brightness-110 hover:shadow-glow">Register Now <ArrowRight className="size-4" /></Link>
+              )}
               <Link to="/opportunities/$slug" params={{ slug: featured.slug }} className="inline-flex w-full sm:w-auto items-center justify-center gap-2 rounded-full border border-neon/40 bg-surface/80 px-6 py-3.5 text-sm font-semibold text-neon transition hover:border-neon hover:bg-neon/15 hover:shadow-glow-soft">Explore Hackathon</Link>
             </div>
           </div>

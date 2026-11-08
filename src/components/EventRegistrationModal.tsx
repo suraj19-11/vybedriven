@@ -16,14 +16,24 @@ import {
   ExternalLink,
   Sparkles,
   Ticket,
+  UserPlus,
+  Trash2,
+  Download,
+  ShieldCheck,
+  ChevronRight,
+  ArrowLeft,
+  Building2,
+  Phone,
+  Mail,
+  User,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import type { Opportunity } from "@/data/opportunities";
 import {
   submitRegistration,
-  isUserRegistered,
   getRegistrationsBySlug,
   type EventRegistration,
+  type TeammateDetail,
 } from "@/data/events-store";
 import { toast } from "sonner";
 
@@ -34,6 +44,23 @@ interface EventRegistrationModalProps {
   onSuccess?: () => void;
 }
 
+const GENDERS = [
+  "Male",
+  "Female",
+  "Transgender",
+  "Intersex",
+  "Non-binary",
+  "Prefer not to say",
+  "Other",
+];
+
+const USER_TYPES = [
+  { label: "College Students", icon: "🎓" },
+  { label: "Professional", icon: "💼" },
+  { label: "School Student", icon: "🎒" },
+  { label: "Fresher", icon: "🚀" },
+];
+
 export function EventRegistrationModal({
   opportunity,
   open,
@@ -42,18 +69,28 @@ export function EventRegistrationModal({
 }: EventRegistrationModalProps) {
   const { user, profile } = useAuth();
 
-  const [fullName, setFullName] = useState("");
+  // Wizard Step: 1 = Basic/User Details, 2 = Team Setup, 3 = Confirmation
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+
+  // Step 1: Basic Details
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [collegeOrCompany, setCollegeOrCompany] = useState("");
-  const [teamType, setTeamType] = useState<"solo" | "team">("solo");
+  const [gender, setGender] = useState("Male");
+  const [location, setLocation] = useState("");
+  const [organization, setOrganization] = useState("");
+  const [userType, setUserType] = useState("College Students");
+  const [termsAccepted, setTermsAccepted] = useState(true);
+  const [stayInLoop, setStayInLoop] = useState(true);
+
+  // Step 2: Team Setup
+  const [teamMode, setTeamMode] = useState<"create_team" | "join_team">("create_team");
   const [teamName, setTeamName] = useState("");
-  const [teamSize, setTeamSize] = useState("2 members");
-  const [teamMembers, setTeamMembers] = useState("");
-  const [experienceLevel, setExperienceLevel] = useState("Intermediate");
-  const [githubUrl, setGithubUrl] = useState("");
-  const [linkedinUrl, setLinkedinUrl] = useState("");
-  const [projectIdea, setProjectIdea] = useState("");
+  const [lookingForTeammates, setLookingForTeammates] = useState(false);
+  const [teammates, setTeammates] = useState<TeammateDetail[]>([]);
+
+  // Submitting & Confirmed state
   const [submitting, setSubmitting] = useState(false);
   const [confirmedReg, setConfirmedReg] = useState<EventRegistration | null>(null);
 
@@ -70,59 +107,131 @@ export function EventRegistrationModal({
     if (open) {
       if (existingReg) {
         setConfirmedReg(existingReg);
+        setStep(3);
       } else {
         setConfirmedReg(null);
+        setStep(1);
+
+        // Pre-fill from logged-in builder profile
         if (profile) {
-          setFullName(profile.display_name || user?.user_metadata?.["full_name"] || "");
+          const names = (profile.display_name || user?.user_metadata?.["full_name"] || "").trim().split(" ");
+          setFirstName(names[0] || "");
+          setLastName(names.slice(1).join(" ") || "");
           setEmail(user?.email || "");
-          setCollegeOrCompany(profile.college_or_company || "");
-          setGithubUrl(profile.github_url || "");
-          setLinkedinUrl(profile.linkedin_url || "");
+          setOrganization(profile.college_or_company || "");
+          setLocation(profile.location || "");
         } else if (user) {
+          const names = (user.user_metadata?.["full_name"] || user.email?.split("@")[0] || "").trim().split(" ");
+          setFirstName(names[0] || "");
+          setLastName(names.slice(1).join(" ") || "");
           setEmail(user.email || "");
-          setFullName(user.user_metadata?.["full_name"] || "");
         }
       }
     }
   }, [open, user, profile, existingReg]);
 
-  const handleSubmit = (e: FormEvent) => {
+  // Handle Step 1 Validation & Proceed
+  const handleProceedToTeam = (e: FormEvent) => {
     e.preventDefault();
-    if (!fullName.trim() || !email.trim() || !phone.trim() || !collegeOrCompany.trim()) {
-      toast.error("Please fill in all required fields.");
+    if (!firstName.trim()) {
+      toast.error("Please enter your First Name.");
+      return;
+    }
+    if (!email.trim() || !email.includes("@")) {
+      toast.error("Please enter a valid email address.");
+      return;
+    }
+    if (!phone.trim() || phone.replace(/[^\d]/g, "").length < 10) {
+      toast.error("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    if (!organization.trim()) {
+      toast.error("Please enter your College or Organization Name.");
+      return;
+    }
+    if (!termsAccepted) {
+      toast.error("Please accept the terms and conditions to proceed.");
       return;
     }
 
-    if (teamType === "team" && !teamName.trim()) {
-      toast.error("Please provide a team name.");
+    setStep(2);
+  };
+
+  // Add Teammate helper (Max 3 additional members + 1 leader = 4 total)
+  const handleAddTeammate = () => {
+    if (teammates.length >= 3) {
+      toast.error("A team can have a maximum of 4 members.");
       return;
+    }
+    setTeammates([...teammates, { name: "", email: "", phone: "" }]);
+  };
+
+  const handleUpdateTeammate = (index: number, field: keyof TeammateDetail, value: string) => {
+    const updated = [...teammates];
+    updated[index] = { ...updated[index], [field]: value };
+    setTeammates(updated);
+  };
+
+  const handleRemoveTeammate = (index: number) => {
+    setTeammates(teammates.filter((_, i) => i !== index));
+  };
+
+  // Final Submit Handler
+  const handleFinalSubmit = (e: FormEvent) => {
+    e.preventDefault();
+
+    if (teamMode === "create_team" && !teamName.trim()) {
+      toast.error("Please enter a team name.");
+      return;
+    }
+
+    // Validate teammate emails if added
+    for (let i = 0; i < teammates.length; i++) {
+      const tm = teammates[i];
+      if (!tm.name.trim()) {
+        toast.error(`Please enter a name for Teammate #${i + 2}.`);
+        return;
+      }
+      if (!tm.email.trim() || !tm.email.includes("@")) {
+        toast.error(`Please enter a valid email for Teammate #${i + 2}.`);
+        return;
+      }
     }
 
     setSubmitting(true);
     try {
+      const fullParticipantName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      const teamSummary = teammates.map((t) => `${t.name.trim()} (${t.email.trim()})`).join(", ");
+
       const reg = submitRegistration({
         opportunitySlug: opportunity.slug,
         opportunityTitle: opportunity.title,
         userId: user?.id,
-        fullName: fullName.trim(),
-        email: email.trim(),
+        fullName: fullParticipantName,
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim().toLowerCase(),
         phone: phone.trim(),
-        collegeOrCompany: collegeOrCompany.trim(),
-        teamType,
-        teamName: teamType === "team" ? teamName.trim() : undefined,
-        teamSize: teamType === "team" ? teamSize : "Solo",
-        teamMembers: teamType === "team" ? teamMembers.trim() : undefined,
-        experienceLevel,
-        githubUrl: githubUrl.trim() || undefined,
-        linkedinUrl: linkedinUrl.trim() || undefined,
-        projectIdea: projectIdea.trim() || undefined,
+        gender,
+        location: location.trim(),
+        collegeOrCompany: organization.trim(),
+        userType,
+        teamType: teamMode === "create_team" ? "team" : "solo",
+        teamName: teamMode === "create_team" ? teamName.trim() : undefined,
+        teamSize: teamMode === "create_team" ? `${1 + teammates.length} members` : "Solo",
+        teamMembers: teamMode === "create_team" ? teamSummary : undefined,
+        teammates: teamMode === "create_team" ? teammates : [],
+        lookingForTeammates,
+        termsAccepted,
+        experienceLevel: "Intermediate",
       });
 
       setConfirmedReg(reg);
-      toast.success("Registration confirmed! See you at the event.");
+      setStep(3);
+      toast.success("Registration confirmed! See you in Goa.");
       onSuccess?.();
     } catch (err: any) {
-      toast.error(err.message || "Failed to register. Please try again.");
+      toast.error(err.message || "Failed to submit registration. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -131,316 +240,692 @@ export function EventRegistrationModal({
   const generateGoogleCalendarUrl = () => {
     const title = encodeURIComponent(opportunity.title);
     const details = encodeURIComponent(
-      `${opportunity.description}\n\nFormat: ${opportunity.format}\nOrganized by: ${opportunity.organizer}`
+      `${opportunity.description}\n\nFormat: ${opportunity.format}\nOrganized by: ${opportunity.organizer}\nRegistration ID: ${confirmedReg?.id || ""}`
     );
-    const location = encodeURIComponent(opportunity.location);
-    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${location}`;
+    const loc = encodeURIComponent(opportunity.location);
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${details}&location=${loc}`;
+  };
+
+  const downloadPassSummary = () => {
+    if (!confirmedReg) return;
+    const textContent = `========================================================
+VYBE DRIVEN — OFFICIAL PARTICIPANT CONFIRMATION PASS
+========================================================
+Event: ${opportunity.title}
+Format: ${opportunity.format}
+Location: ${opportunity.location}
+Date: ${opportunity.date}
+
+REGISTRATION DETAILS:
+--------------------------------------------------------
+Registration ID : ${confirmedReg.id}
+Registration Date: ${new Date(confirmedReg.createdAt).toLocaleString()}
+Full Name       : ${confirmedReg.fullName}
+Email           : ${confirmedReg.email}
+Phone           : ${confirmedReg.phone}
+Gender          : ${confirmedReg.gender || "-"}
+Location        : ${confirmedReg.location || "-"}
+College / Org   : ${confirmedReg.collegeOrCompany}
+User Category   : ${confirmedReg.userType || "-"}
+Participation   : ${confirmedReg.teamType.toUpperCase()}
+Team Name       : ${confirmedReg.teamName || "N/A (Solo / Squad matching)"}
+Team Size       : ${confirmedReg.teamSize || "1"}
+Teammates       : ${confirmedReg.teamMembers || "None"}
+Status          : ${confirmedReg.status}
+
+IMPORTANT STAGES:
+1. Idea Submission (PPT Round) — Active now until Dec 31, 2026
+2. 36-Hour Offline Hackathon — Grand Finale in Goa (Jan 16–17, 2027)
+
+Official Desk: hello@goabuilds.com
+Platform Support: vybedriven@gmail.com
+========================================================`;
+
+    const blob = new Blob([textContent], { type: "text/plain;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `${confirmedReg.id}-${opportunity.slug}-pass.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    toast.success("Confirmation pass downloaded.");
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto border-border bg-card p-6 sm:p-8 text-card-foreground">
-        {confirmedReg ? (
-          // Confirmation View
-          <div className="py-3 text-center">
-            <div className="mx-auto grid size-16 place-items-center rounded-2xl bg-neon/15 text-neon shadow-glow">
-              <CheckCircle2 className="size-9" />
+      <DialogContent className="max-w-2xl max-h-[92vh] overflow-y-auto border-border bg-[#070d09] p-5 sm:p-7 text-foreground shadow-2xl">
+        {/* Top Header */}
+        <DialogHeader className="border-b border-border/70 pb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="size-11 sm:size-12 rounded-xl border border-neon/30 bg-surface flex items-center justify-center overflow-hidden shrink-0 shadow-glow-soft">
+                <img
+                  src={opportunity.image}
+                  alt={opportunity.title}
+                  className="h-full w-full object-cover"
+                />
+              </div>
+              <div>
+                <DialogTitle className="text-base sm:text-lg font-bold text-foreground">
+                  {opportunity.title}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">
+                  {opportunity.organizer}
+                </DialogDescription>
+              </div>
             </div>
-            <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-neon">
-              Application Confirmed
-            </p>
-            <DialogTitle className="mt-1 text-2xl font-black sm:text-3xl">
-              You're in! 🎉
-            </DialogTitle>
-            <DialogDescription className="mt-2 text-sm text-muted-foreground">
-              Your registration for{" "}
-              <strong className="text-foreground">{opportunity.title}</strong> has been
-              received by the organizer.
-            </DialogDescription>
 
-            {/* Ticket Card */}
-            <div className="mt-6 rounded-2xl border border-neon/40 bg-gradient-to-br from-surface via-surface-2 to-surface p-5 text-left shadow-glow-soft">
-              <div className="flex items-center justify-between border-b border-border pb-3">
-                <div className="flex items-center gap-2">
-                  <Ticket className="size-4 text-neon" />
-                  <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                    Participant Pass
-                  </span>
-                </div>
-                <span className="rounded-full bg-neon/20 px-2.5 py-0.5 text-xs font-bold text-neon font-mono">
-                  {confirmedReg.id}
+            {/* User Session Pill */}
+            {user ? (
+              <div className="flex items-center gap-2 rounded-full border border-border bg-surface/80 px-3 py-1 text-xs text-muted-foreground self-start sm:self-auto">
+                <span className="size-2 rounded-full bg-neon animate-pulse" />
+                <span className="truncate max-w-[170px] text-foreground font-medium">
+                  {user.email}
                 </span>
               </div>
-              <div className="mt-3 grid gap-2 sm:grid-cols-2 text-xs">
-                <div>
-                  <p className="text-muted-foreground">Participant</p>
-                  <p className="font-semibold text-foreground text-sm">{confirmedReg.fullName}</p>
-                </div>
-                <div>
-                  <p className="text-muted-foreground">College / Organization</p>
-                  <p className="font-semibold text-foreground text-sm">{confirmedReg.collegeOrCompany}</p>
-                </div>
-                {confirmedReg.teamType === "team" && confirmedReg.teamName && (
-                  <div>
-                    <p className="text-muted-foreground">Team</p>
-                    <p className="font-semibold text-neon text-sm">{confirmedReg.teamName} ({confirmedReg.teamSize})</p>
-                  </div>
-                )}
-                <div>
-                  <p className="text-muted-foreground">Date & Venue</p>
-                  <p className="font-semibold text-foreground">{opportunity.date} · {opportunity.location}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Action Links */}
-            <div className="mt-6 flex flex-col gap-2.5 sm:flex-row">
-              {opportunity.groupUrl && (
-                <a
-                  href={opportunity.groupUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-neon px-4 py-3 text-xs sm:text-sm font-bold text-primary-foreground shadow-glow-soft transition hover:brightness-105"
-                >
-                  <MessageCircle className="size-4" />
-                  <span>Join Organizer WhatsApp Group</span>
-                </a>
-              )}
-              <a
-                href={generateGoogleCalendarUrl()}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl border border-border bg-surface px-4 py-3 text-xs sm:text-sm font-semibold transition hover:border-neon hover:text-neon"
-              >
-                <Calendar className="size-4" />
-                <span>Add to Calendar</span>
-              </a>
-            </div>
-
-            <Button
-              variant="outline"
-              className="mt-5 w-full rounded-full border-border text-xs sm:text-sm"
-              onClick={() => onOpenChange(false)}
-            >
-              Done
-            </Button>
+            ) : null}
           </div>
-        ) : (
-          // Registration Form View
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <DialogHeader className="text-left">
-              <div className="flex items-center gap-2 text-xs font-semibold text-neon">
-                <Sparkles className="size-3.5" /> Direct Vybe Driven Registration
-              </div>
-              <DialogTitle className="text-2xl font-bold">
-                Register for {opportunity.title}
-              </DialogTitle>
-              <DialogDescription className="text-xs sm:text-sm text-muted-foreground">
-                {opportunity.date} · {opportunity.format} · {opportunity.fee}
-              </DialogDescription>
-            </DialogHeader>
 
-            <div className="rounded-xl border border-neon/30 bg-neon/10 p-3 text-xs text-muted-foreground flex items-center gap-2">
-              <Sparkles className="size-4 text-neon shrink-0" />
-              <span>Applying with verified builder profile: <strong className="text-foreground">{user?.email}</strong></span>
+          {/* Stepper Indicator */}
+          {step !== 3 && (
+            <div className="mt-4 flex items-center justify-between gap-2 border-t border-border/50 pt-3 text-xs">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`flex size-6 items-center justify-center rounded-full text-xs font-bold ${
+                    step === 1 ? "bg-neon text-black" : "bg-neon/20 text-neon"
+                  }`}
+                >
+                  1
+                </span>
+                <span className={step === 1 ? "font-bold text-foreground" : "text-muted-foreground"}>
+                  Basic &amp; User Details
+                </span>
+              </div>
+              <ChevronRight className="size-4 text-muted-foreground" />
+              <div className="flex items-center gap-2">
+                <span
+                  className={`flex size-6 items-center justify-center rounded-full text-xs font-bold ${
+                    step === 2 ? "bg-neon text-black" : "bg-surface-2 text-muted-foreground"
+                  }`}
+                >
+                  2
+                </span>
+                <span className={step === 2 ? "font-bold text-foreground" : "text-muted-foreground"}>
+                  Team Setup
+                </span>
+              </div>
+            </div>
+          )}
+        </DialogHeader>
+
+        {/* STEP 1: BASIC & USER DETAILS */}
+        {step === 1 && (
+          <form onSubmit={handleProceedToTeam} className="mt-4 space-y-5 text-xs sm:text-sm">
+            <div>
+              <h3 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
+                <User className="size-4 text-neon" /> Basic Details
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Official participant information shared with the Goa Buildathon organizer.
+              </p>
             </div>
 
-            {/* Personal Details */}
-            <div className="space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                1. Your Details
-              </h3>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="text-xs font-medium text-foreground">
-                    Full Name <span className="text-destructive">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={fullName}
-                    onChange={(e) => setFullName(e.target.value)}
-                    placeholder="e.g. Satyam Pandey"
-                    className="mt-1 w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-foreground">
-                    Email Address <span className="text-destructive">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="you@domain.com"
-                    className="mt-1 w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-foreground">
-                    Phone / WhatsApp Number <span className="text-destructive">*</span>
-                  </label>
+            {/* First & Last Name */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                  First Name <span className="text-neon">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Enter first name"
+                  className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                  Last Name <span className="text-muted-foreground font-normal">(if applicable)</span>
+                </label>
+                <input
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="Enter last name"
+                  className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon"
+                />
+              </div>
+            </div>
+
+            {/* Email & Phone with +91 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                  Email Address <span className="text-neon">*</span>
+                </label>
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="enter email"
+                  className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                  Mobile Number <span className="text-neon">*</span>
+                </label>
+                <div className="flex items-center rounded-xl border border-border bg-surface overflow-hidden focus-within:border-neon focus-within:ring-1 focus-within:ring-neon">
+                  <span className="flex items-center gap-1 bg-surface-2 px-3 py-2.5 text-xs font-bold text-foreground border-r border-border shrink-0 select-none">
+                    🇮🇳 +91
+                  </span>
                   <input
                     type="tel"
                     required
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
-                    placeholder="+91 98765 43210"
-                    className="mt-1 w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon"
+                    placeholder="10-digit mobile number"
+                    className="w-full bg-transparent px-3 py-2.5 text-xs sm:text-sm text-foreground outline-none"
                   />
                 </div>
+              </div>
+            </div>
+
+            {/* Gender Pill Selector */}
+            <div>
+              <label className="block text-xs font-semibold text-foreground/90 mb-2">
+                Gender <span className="text-neon">*</span>
+              </label>
+              <div className="flex flex-wrap gap-2">
+                {GENDERS.map((g) => (
+                  <button
+                    key={g}
+                    type="button"
+                    onClick={() => setGender(g)}
+                    className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+                      gender === g
+                        ? "bg-neon text-black font-bold shadow-glow-soft"
+                        : "border border-border bg-surface text-muted-foreground hover:text-foreground hover:border-border/80"
+                    }`}
+                  >
+                    {g}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Location & Organization */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-foreground/90 mb-1 flex items-center justify-between">
+                  <span>Location <span className="text-neon">*</span></span>
+                  <span className="text-[10px] text-muted-foreground">City, State</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="e.g. South Goa, Goa or Mumbai"
+                    className="w-full rounded-xl border border-border bg-surface pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon"
+                  />
+                  <MapPin className="absolute left-3 top-3 size-4 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                  Organization / College Name <span className="text-neon">*</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    value={organization}
+                    onChange={(e) => setOrganization(e.target.value)}
+                    placeholder="Search or enter your college / company"
+                    className="w-full rounded-xl border border-border bg-surface pl-9 pr-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon"
+                  />
+                  <Building2 className="absolute left-3 top-3 size-4 text-muted-foreground pointer-events-none" />
+                </div>
+              </div>
+            </div>
+
+            {/* User Type Pill Selector */}
+            <div className="pt-2 border-t border-border/60">
+              <label className="block text-xs font-semibold text-foreground/90 mb-2">
+                User Details &amp; Category <span className="text-neon">*</span>
+              </label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {USER_TYPES.map((ut) => (
+                  <button
+                    key={ut.label}
+                    type="button"
+                    onClick={() => setUserType(ut.label)}
+                    className={`flex items-center justify-center gap-1.5 rounded-xl p-2.5 text-xs font-semibold transition ${
+                      userType === ut.label
+                        ? "border border-neon bg-neon/15 text-neon shadow-glow-soft"
+                        : "border border-border bg-surface text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    <span>{ut.icon}</span>
+                    <span className="truncate">{ut.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Notice Note */}
+            <div className="rounded-xl border border-sky-400/30 bg-sky-500/10 p-3 text-xs text-sky-300 flex items-start gap-2.5">
+              <Sparkles className="size-4 shrink-0 text-sky-400 mt-0.5" />
+              <span>
+                <strong>Note:</strong> You can create your squad and add teammates on the next step. Teams can have 2 to 4 members.
+              </span>
+            </div>
+
+            {/* Terms and Conditions */}
+            <div className="space-y-2 pt-2 border-t border-border/60">
+              <label className="flex items-start gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  required
+                  checked={termsAccepted}
+                  onChange={(e) => setTermsAccepted(e.target.checked)}
+                  className="mt-0.5 size-4 rounded border-border text-neon focus:ring-neon"
+                />
+                <span className="text-xs text-muted-foreground leading-relaxed">
+                  By registering for this opportunity, you agree to share the data mentioned in this form or any form henceforth on this opportunity with the organizer of this opportunity for further analysis, processing, and outreach. You also agree to the privacy policy and terms of use of Vybe Driven.
+                </span>
+              </label>
+
+              <label className="flex items-center gap-2.5 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={stayInLoop}
+                  onChange={(e) => setStayInLoop(e.target.checked)}
+                  className="size-4 rounded border-border text-neon focus:ring-neon"
+                />
+                <span className="text-xs text-foreground font-medium">
+                  Stay in the loop — Get relevant updates curated for you!
+                </span>
+              </label>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-4 border-t border-border/70">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => onOpenChange(false)}
+                className="rounded-full text-xs text-muted-foreground hover:text-foreground"
+              >
+                Close
+              </Button>
+
+              <Button
+                type="submit"
+                className="rounded-full bg-gradient-brand text-primary-foreground font-bold px-7 shadow-glow hover:brightness-110"
+              >
+                Next Step <ChevronRight className="size-4 ml-1" />
+              </Button>
+            </div>
+          </form>
+        )}
+
+        {/* STEP 2: TEAM SETUP & SQUAD FORMATION */}
+        {step === 2 && (
+          <form onSubmit={handleFinalSubmit} className="mt-4 space-y-5 text-xs sm:text-sm">
+            {/* Important Notes Banner */}
+            <div className="rounded-2xl border border-sky-400/35 bg-gradient-to-r from-sky-500/15 via-surface to-surface p-4">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-sky-400 mb-1.5 flex items-center gap-1.5">
+                <ShieldCheck className="size-4" /> Important Notes
+              </h4>
+              <ul className="space-y-1 text-xs text-muted-foreground list-disc pl-4 leading-relaxed">
+                <li>Your team must have at least 2 and no more than 4 members for the offline sprint.</li>
+                <li>If you select &quot;Join A Team / Solo&quot;, you can explore squads seeking teammates before the roster locks.</li>
+                <li>As one or more rounds are live, you cannot delete the registration once confirmed.</li>
+              </ul>
+            </div>
+
+            {/* Choice: Create A Team vs Join A Team / Solo */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+              <button
+                type="button"
+                onClick={() => setTeamMode("create_team")}
+                className={`flex flex-col items-center justify-center rounded-2xl p-4 text-center transition ${
+                  teamMode === "create_team"
+                    ? "border-2 border-neon bg-neon/10 text-foreground shadow-glow-soft"
+                    : "border border-border bg-surface text-muted-foreground hover:border-border/80"
+                }`}
+              >
+                <div className="grid size-12 place-items-center rounded-xl bg-neon/15 text-neon mb-2.5">
+                  <UserPlus className="size-6" />
+                </div>
+                <h4 className="text-sm font-bold text-foreground">Create A Team</h4>
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                  Form a squad &amp; invite your teammates now or add their details.
+                </p>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setTeamMode("join_team")}
+                className={`flex flex-col items-center justify-center rounded-2xl p-4 text-center transition ${
+                  teamMode === "join_team"
+                    ? "border-2 border-cyan-400 bg-cyan-500/10 text-foreground shadow-glow-soft"
+                    : "border border-border bg-surface text-muted-foreground hover:border-border/80"
+                }`}
+              >
+                <div className="grid size-12 place-items-center rounded-xl bg-cyan-400/15 text-cyan-400 mb-2.5">
+                  <Users className="size-6" />
+                </div>
+                <h4 className="text-sm font-bold text-foreground">Join A Team / Solo</h4>
+                <p className="mt-1 text-xs text-muted-foreground leading-relaxed">
+                  Participate individually or join squads seeking members.
+                </p>
+              </button>
+            </div>
+
+            {/* CREATE TEAM FORM */}
+            {teamMode === "create_team" ? (
+              <div className="space-y-4 pt-2">
                 <div>
-                  <label className="text-xs font-medium text-foreground">
-                    College / Organization <span className="text-destructive">*</span>
+                  <label className="block text-xs font-semibold text-foreground mb-1">
+                    Team Name <span className="text-neon">*</span>
                   </label>
                   <input
                     type="text"
                     required
-                    value={collegeOrCompany}
-                    onChange={(e) => setCollegeOrCompany(e.target.value)}
-                    placeholder="e.g. Fr. CRCE Bandra or Google"
-                    className="mt-1 w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon"
+                    value={teamName}
+                    onChange={(e) => setTeamName(e.target.value)}
+                    placeholder="Enter your team name (e.g. CodeBrewers)"
+                    className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon"
                   />
                 </div>
-              </div>
-            </div>
 
-            {/* Team or Solo */}
-            <div className="space-y-3 border-t border-border pt-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                2. Participation Format
-              </h3>
-              <div className="flex gap-4">
-                <label className="flex items-center gap-2 cursor-pointer text-xs sm:text-sm font-medium">
-                  <input
-                    type="radio"
-                    name="teamType"
-                    checked={teamType === "solo"}
-                    onChange={() => setTeamType("solo")}
-                    className="accent-neon size-4"
-                  />
-                  <span>Solo Entry</span>
-                </label>
-                <label className="flex items-center gap-2 cursor-pointer text-xs sm:text-sm font-medium">
-                  <input
-                    type="radio"
-                    name="teamType"
-                    checked={teamType === "team"}
-                    onChange={() => setTeamType("team")}
-                    className="accent-neon size-4"
-                  />
-                  <span>Team Entry ({opportunity.teamSize || "Up to 4"})</span>
-                </label>
-              </div>
+                {/* Teammates Header with Counter */}
+                <div className="flex items-center justify-between border-b border-border/60 pb-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="size-4 text-neon" />
+                    <span className="font-bold text-foreground">
+                      Teammates ({1 + teammates.length}/4)
+                    </span>
+                  </div>
+                  {teammates.length < 1 && (
+                    <span className="text-[11px] font-semibold text-amber-400">
+                      Add at least 1 more member to complete the team
+                    </span>
+                  )}
+                </div>
 
-              {teamType === "team" && (
-                <div className="space-y-3 rounded-xl border border-border bg-surface/50 p-3.5">
-                  <div className="grid gap-3 sm:grid-cols-2">
+                {/* Leader Card (Member 1) */}
+                <div className="flex items-center justify-between rounded-xl border border-neon/40 bg-neon/10 p-3.5">
+                  <div className="flex items-center gap-3">
+                    <div className="size-9 rounded-full bg-neon text-black font-extrabold flex items-center justify-center shrink-0">
+                      {firstName.charAt(0) || "U"}
+                    </div>
                     <div>
-                      <label className="text-xs font-medium text-foreground">
-                        Team Name <span className="text-destructive">*</span>
-                      </label>
+                      <p className="font-bold text-foreground text-xs sm:text-sm">
+                        {firstName} {lastName}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground">
+                        {phone} · {email}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="rounded-full bg-neon/20 px-2.5 py-0.5 text-[10px] font-bold text-neon uppercase">
+                    Team Leader
+                  </span>
+                </div>
+
+                {/* Additional Teammates */}
+                {teammates.map((tm, idx) => (
+                  <div
+                    key={idx}
+                    className="rounded-xl border border-border bg-surface/70 p-3.5 space-y-2.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-neon">
+                        Member #{idx + 2} Details
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveTeammate(idx)}
+                        className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
+                      >
+                        <Trash2 className="size-3.5" /> Remove
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                       <input
                         type="text"
                         required
-                        value={teamName}
-                        onChange={(e) => setTeamName(e.target.value)}
-                        placeholder="e.g. CodeMonks"
-                        className="mt-1 w-full rounded-xl border border-border bg-card px-3.5 py-2 text-sm outline-none focus:border-neon"
+                        value={tm.name}
+                        onChange={(e) => handleUpdateTeammate(idx, "name", e.target.value)}
+                        placeholder="Member name *"
+                        className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
+                      />
+                      <input
+                        type="email"
+                        required
+                        value={tm.email}
+                        onChange={(e) => handleUpdateTeammate(idx, "email", e.target.value)}
+                        placeholder="Member email *"
+                        className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
+                      />
+                      <input
+                        type="tel"
+                        value={tm.phone || ""}
+                        onChange={(e) => handleUpdateTeammate(idx, "phone", e.target.value)}
+                        placeholder="Mobile (optional)"
+                        className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
                       />
                     </div>
-                    <div>
-                      <label className="text-xs font-medium text-foreground">
-                        Total Team Size
-                      </label>
-                      <select
-                        value={teamSize}
-                        onChange={(e) => setTeamSize(e.target.value)}
-                        className="mt-1 w-full rounded-xl border border-border bg-card px-3.5 py-2 text-sm outline-none focus:border-neon"
-                      >
-                        <option>2 members</option>
-                        <option>3 members</option>
-                        <option>4 members</option>
-                        <option>5+ members</option>
-                      </select>
-                    </div>
                   </div>
+                ))}
+
+                {/* Add Member Button */}
+                {teammates.length < 3 && (
+                  <button
+                    type="button"
+                    onClick={handleAddTeammate}
+                    className="w-full rounded-xl border border-dashed border-neon/50 bg-neon/5 py-3 text-xs font-bold text-neon transition hover:bg-neon/15 flex items-center justify-center gap-2"
+                  >
+                    <UserPlus className="size-4" />
+                    + Add {teammates.length === 0 ? "2nd" : teammates.length === 1 ? "3rd" : "4th"} Member
+                  </button>
+                )}
+
+                {/* Looking for Teammates Switch */}
+                <div className="flex items-center justify-between rounded-xl border border-border bg-surface p-3 mt-3">
                   <div>
-                    <label className="text-xs font-medium text-foreground">
-                      Teammate Names & Emails (Optional)
-                    </label>
-                    <textarea
-                      rows={2}
-                      value={teamMembers}
-                      onChange={(e) => setTeamMembers(e.target.value)}
-                      placeholder="e.g. John Doe (john@gmail.com), Jane Smith (jane@gmail.com)"
-                      className="mt-1 w-full rounded-xl border border-border bg-card px-3.5 py-2 text-sm outline-none focus:border-neon"
-                    />
+                    <p className="text-xs font-bold text-foreground">Looking for More Teammates?</p>
+                    <p className="text-[11px] text-muted-foreground">
+                      Allow other ambitious builders on Vybe Driven to request to join your squad.
+                    </p>
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Profile & Portfolio */}
-            <div className="space-y-3 border-t border-border pt-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                3. Builder Profile & Links (Optional)
-              </h3>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="text-xs font-medium text-foreground">GitHub Profile</label>
                   <input
-                    type="url"
-                    value={githubUrl}
-                    onChange={(e) => setGithubUrl(e.target.value)}
-                    placeholder="https://github.com/username"
-                    className="mt-1 w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm outline-none focus:border-neon"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-medium text-foreground">LinkedIn Profile</label>
-                  <input
-                    type="url"
-                    value={linkedinUrl}
-                    onChange={(e) => setLinkedinUrl(e.target.value)}
-                    placeholder="https://linkedin.com/in/username"
-                    className="mt-1 w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm outline-none focus:border-neon"
+                    type="checkbox"
+                    checked={lookingForTeammates}
+                    onChange={(e) => setLookingForTeammates(e.target.checked)}
+                    className="size-5 rounded border-border text-neon focus:ring-neon cursor-pointer"
                   />
                 </div>
               </div>
-              <div>
-                <label className="text-xs font-medium text-foreground">
-                  Project Idea / Motivation
-                </label>
-                <textarea
-                  rows={2}
-                  value={projectIdea}
-                  onChange={(e) => setProjectIdea(e.target.value)}
-                  placeholder="Tell the organizer briefly what you plan to build or explore..."
-                  className="mt-1 w-full rounded-xl border border-border bg-surface px-3.5 py-2 text-sm outline-none focus:border-neon"
-                />
+            ) : (
+              /* JOIN TEAM / SOLO INFO */
+              <div className="rounded-2xl border border-border bg-surface p-5 text-center space-y-2">
+                <Sparkles className="size-6 text-cyan-400 mx-auto" />
+                <h4 className="text-sm font-bold text-foreground">Individual / Squad Matching</h4>
+                <p className="text-xs text-muted-foreground max-w-md mx-auto leading-relaxed">
+                  Your registration will be submitted as an individual innovator. You can team up with fellow builders on Discord, WhatsApp community, or during kickoff before the hackathon begins.
+                </p>
               </div>
-            </div>
+            )}
 
-            {/* Submit */}
-            <div className="border-t border-border pt-4">
+            {/* Modal Actions */}
+            <div className="flex items-center justify-between pt-4 border-t border-border/70">
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => setStep(1)}
+                className="rounded-full text-xs text-muted-foreground hover:text-foreground"
+              >
+                <ArrowLeft className="size-3.5 mr-1" /> Back
+              </Button>
+
               <Button
                 type="submit"
                 disabled={submitting}
-                className="w-full rounded-full bg-gradient-brand text-primary-foreground font-bold py-3 text-sm sm:text-base shadow-glow transition hover:brightness-105"
+                className="rounded-full bg-gradient-brand text-primary-foreground font-bold px-7 shadow-glow hover:brightness-110"
               >
-                {submitting ? "Submitting Registration..." : "Confirm & Complete Registration"}
+                {submitting ? "Submitting Registration..." : "Complete Registration 🚀"}
               </Button>
-              <p className="mt-2 text-center text-[11px] text-muted-foreground">
-                By submitting, your details will be shared with the official organizer (
-                {opportunity.organizer}).
-              </p>
             </div>
           </form>
+        )}
+
+        {/* STEP 3: REGISTRATION SUCCESSFUL CONFIRMATION SCREEN */}
+        {step === 3 && confirmedReg && (
+          <div className="mt-4 space-y-5 text-center py-2">
+            {/* Big Green Glow Checkmark */}
+            <div className="mx-auto grid size-16 sm:size-20 place-items-center rounded-full bg-neon/15 text-neon shadow-glow">
+              <CheckCircle2 className="size-10 sm:size-12" />
+            </div>
+
+            <div>
+              <h3 className="text-xl sm:text-2xl font-black text-foreground">
+                Registration Successful!
+              </h3>
+              <p className="mt-1 text-xs sm:text-sm text-muted-foreground max-w-md mx-auto">
+                Thank you for registering for {opportunity.title}. Your spot has been officially recorded in the builder database.
+              </p>
+            </div>
+
+            {/* Official Pass Card */}
+            <div className="rounded-2xl border-2 border-neon/40 bg-surface-2/80 p-5 text-left shadow-glow-soft space-y-4">
+              <div className="flex items-start justify-between gap-3 border-b border-border/70 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="size-12 rounded-xl bg-black/60 border border-border flex items-center justify-center overflow-hidden shrink-0">
+                    <img src={opportunity.image} alt="" className="h-full w-full object-cover" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm sm:text-base font-extrabold text-foreground">
+                      {opportunity.title}
+                    </h4>
+                    <p className="text-xs text-muted-foreground">
+                      {opportunity.format} · {opportunity.location}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="text-right">
+                  <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground block">
+                    Registration ID
+                  </span>
+                  <span className="font-mono text-sm sm:text-base font-black text-neon">
+                    {confirmedReg.id}
+                  </span>
+                </div>
+              </div>
+
+              {/* Summary Rows */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Primary Participant</span>
+                  <span className="font-bold text-foreground">{confirmedReg.fullName}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">College / Org</span>
+                  <span className="font-bold text-foreground truncate block">{confirmedReg.collegeOrCompany}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Participation Mode</span>
+                  <span className="font-bold text-foreground">
+                    {confirmedReg.teamType === "team" ? `Team (${confirmedReg.teamName})` : "Solo Builder"}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block text-[11px]">Category</span>
+                  <span className="font-bold text-foreground">{confirmedReg.userType || "College Student"}</span>
+                </div>
+              </div>
+
+              {/* What's Next in Goa Buildathon */}
+              <div className="border-t border-border/60 pt-3 space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-neon">
+                  What&apos;s Next in {opportunity.title}?
+                </p>
+                <div className="rounded-xl bg-background/60 border border-border p-2.5 space-y-2 text-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-foreground">
+                      1. Idea Submission — PPT Round
+                    </span>
+                    <span className="rounded-full bg-neon/15 px-2 py-0.5 text-[10px] font-bold text-neon">
+                      🟢 Live Now
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-muted-foreground">
+                    <span>2. 36-Hour Offline Hackathon — Grand Finale</span>
+                    <span className="text-[11px] font-mono text-foreground font-semibold">Jan 16–17, 2027</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Next Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2">
+              <a
+                href={generateGoogleCalendarUrl()}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-full border border-border bg-surface px-4 py-2.5 text-xs font-semibold text-foreground transition hover:border-neon hover:text-neon"
+              >
+                <Calendar className="size-3.5 text-neon" /> Add to Calendar
+              </a>
+
+              {opportunity.groupUrl && (
+                <a
+                  href={opportunity.groupUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-400 transition hover:bg-emerald-500/20"
+                >
+                  <MessageCircle className="size-3.5" /> Join WhatsApp Community
+                </a>
+              )}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={downloadPassSummary}
+                className="w-full sm:w-auto rounded-full text-xs font-semibold text-foreground"
+              >
+                <Download className="size-3.5 mr-1 text-neon" /> Download Pass
+              </Button>
+            </div>
+
+            <div className="pt-2">
+              <Button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="w-full rounded-full bg-neon text-black font-extrabold shadow-glow hover:brightness-110"
+              >
+                Done
+              </Button>
+            </div>
+          </div>
         )}
       </DialogContent>
     </Dialog>
   );
 }
-

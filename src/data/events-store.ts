@@ -30,19 +30,33 @@ export type HostedEvent = Opportunity & {
   registrationType: "direct" | "external" | "both";
 };
 
+export type TeammateDetail = {
+  name: string;
+  email: string;
+  phone?: string;
+};
+
 export type EventRegistration = {
   id: string;
   opportunitySlug: string;
   opportunityTitle: string;
   userId?: string;
   fullName: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone: string;
+  gender?: string;
+  location?: string;
   collegeOrCompany: string;
+  userType?: string;
   teamType: "solo" | "team";
   teamName?: string;
   teamSize?: string;
   teamMembers?: string;
+  teammates?: TeammateDetail[];
+  lookingForTeammates?: boolean;
+  termsAccepted?: boolean;
   experienceLevel?: string;
   githubUrl?: string;
   linkedinUrl?: string;
@@ -196,6 +210,17 @@ export function createHostedOpportunity(input: {
   return newEvent;
 }
 
+export const ADMIN_EMAILS = [
+  "vybedriven@gmail.com",
+  "pandeysatyam2030@gmail.com",
+  "hello@goabuilds.com",
+];
+
+export function isPlatformAdmin(user?: { id?: string; email?: string | null } | null): boolean {
+  if (!user?.email) return false;
+  return ADMIN_EMAILS.includes(user.email.toLowerCase().trim());
+}
+
 // Check strictly if the logged-in user is the creator/organizer of an event
 export function isEventOrganizer(
   event?: Opportunity | null,
@@ -205,6 +230,14 @@ export function isEventOrganizer(
   const hosted = event as Partial<HostedEvent>;
   const uId = user.id?.trim();
   const uEmail = user.email?.trim().toLowerCase();
+
+  // Platform admins can manage all events and view registrations
+  if (uEmail && ADMIN_EMAILS.includes(uEmail)) return true;
+
+  // Specific check for Goa Buildathon 2027
+  if (event.slug === "goa-buildathon-2027") {
+    if (uEmail && (ADMIN_EMAILS.includes(uEmail) || uEmail.includes("goabuilds"))) return true;
+  }
 
   const orgId = hosted.organizerId?.trim();
   const orgEmail = hosted.organizerEmail?.trim().toLowerCase();
@@ -264,19 +297,27 @@ export function deleteHostedOpportunity(
   return true;
 }
 
-// Register for an opportunity
+// Register for an opportunity with multi-step support and Supabase sync
 export function submitRegistration(data: {
   opportunitySlug: string;
   opportunityTitle: string;
   userId?: string;
   fullName: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone: string;
+  gender?: string;
+  location?: string;
   collegeOrCompany: string;
+  userType?: string;
   teamType: "solo" | "team";
   teamName?: string;
   teamSize?: string;
   teamMembers?: string;
+  teammates?: TeammateDetail[];
+  lookingForTeammates?: boolean;
+  termsAccepted?: boolean;
   experienceLevel?: string;
   githubUrl?: string;
   linkedinUrl?: string;
@@ -296,9 +337,15 @@ export function submitRegistration(data: {
     return existing;
   }
 
+  // Generate branded confirmation ID
+  const isGoa = data.opportunitySlug === "goa-buildathon-2027";
+  const idPrefix = isGoa ? "GB27" : "REG-2026";
+  const idNumber = Math.floor(10000 + Math.random() * 90000);
+  const newId = `${idPrefix}-${idNumber}`;
+
   const newReg: EventRegistration = {
     ...data,
-    id: `REG-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+    id: newId,
     status: "Registered",
     createdAt: new Date().toISOString(),
   };
@@ -307,9 +354,102 @@ export function submitRegistration(data: {
   if (typeof window !== "undefined") {
     localStorage.setItem(STORAGE_REGISTRATIONS, JSON.stringify(updated));
     notifyStoreChange();
+
+    // Background sync to Supabase database
+    import("@/integrations/supabase/client")
+      .then(({ supabase }) => {
+        supabase
+          .from("registrations" as any)
+          .insert([
+            {
+              id: newReg.id,
+              opportunity_slug: newReg.opportunitySlug,
+              opportunity_title: newReg.opportunityTitle,
+              user_id: newReg.userId || null,
+              full_name: newReg.fullName,
+              first_name: newReg.firstName || null,
+              last_name: newReg.lastName || null,
+              email: newReg.email.toLowerCase().trim(),
+              phone: newReg.phone,
+              gender: newReg.gender || null,
+              location: newReg.location || null,
+              college_or_company: newReg.collegeOrCompany,
+              user_type: newReg.userType || null,
+              team_type: newReg.teamType,
+              team_name: newReg.teamName || null,
+              team_size: newReg.teamSize || "Solo",
+              team_members: newReg.teamMembers || null,
+              teammates: newReg.teammates || [],
+              looking_for_teammates: newReg.lookingForTeammates ?? false,
+              terms_accepted: newReg.termsAccepted ?? true,
+              status: newReg.status,
+              created_at: newReg.createdAt,
+            },
+          ])
+          .then(({ error }) => {
+            if (error) {
+              console.warn("[Database Sync] Supabase notice:", error.message);
+            } else {
+              console.log("[Database Sync] Successfully persisted registration to Supabase cloud.");
+            }
+          })
+          .catch((err) => {
+            console.warn("[Database Sync] Supabase sync attempt:", err);
+          });
+      })
+      .catch((err) => {
+        console.warn("[Database Sync] Supabase client import:", err);
+      });
   }
 
   return newReg;
+}
+
+// Merge remote Supabase registrations into local store
+export function mergeRemoteRegistrations(remoteRows: any[]): void {
+  if (typeof window === "undefined" || !Array.isArray(remoteRows) || !remoteRows.length) return;
+  const localList = getStoredRegistrations();
+  const map = new Map<string, EventRegistration>();
+
+  // Add existing local registrations to map
+  for (const r of localList) {
+    map.set(r.id, r);
+  }
+
+  // Overlay remote records from Supabase
+  for (const row of remoteRows) {
+    const parsed: EventRegistration = {
+      id: row.id,
+      opportunitySlug: row.opportunity_slug,
+      opportunityTitle: row.opportunity_title,
+      userId: row.user_id,
+      fullName: row.full_name || `${row.first_name || ""} ${row.last_name || ""}`.trim(),
+      firstName: row.first_name,
+      lastName: row.last_name,
+      email: row.email,
+      phone: row.phone,
+      gender: row.gender,
+      location: row.location,
+      collegeOrCompany: row.college_or_company,
+      userType: row.user_type,
+      teamType: row.team_type || "solo",
+      teamName: row.team_name,
+      teamSize: row.team_size,
+      teamMembers: row.team_members,
+      teammates: row.teammates,
+      lookingForTeammates: row.looking_for_teammates,
+      termsAccepted: row.terms_accepted,
+      status: row.status || "Registered",
+      createdAt: row.created_at,
+    };
+    map.set(parsed.id, parsed);
+  }
+
+  const merged = Array.from(map.values()).sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
+  localStorage.setItem(STORAGE_REGISTRATIONS, JSON.stringify(merged));
+  notifyStoreChange();
 }
 
 // Get all registrations for an opportunity (organizer view)
@@ -365,7 +505,7 @@ export function isUserRegistered(slug: string, userIdOrEmail?: string): boolean 
   );
 }
 
-// Export CSV of registrants (Organizers only)
+// Export CSV of registrants (Organizers & Admins only)
 export function exportRegistrationsToCSV(
   slug: string,
   eventTitle: string,
@@ -378,7 +518,7 @@ export function exportRegistrationsToCSV(
     return;
   }
 
-  // Strict host verification
+  // Strict host / admin verification
   if (user && !isEventOrganizer(targetEvent, user)) {
     alert("Unauthorized: You can only export registration data for events you organized.");
     return;
@@ -394,17 +534,19 @@ export function exportRegistrationsToCSV(
     "Registration ID",
     "Registration Date",
     "Full Name",
+    "First Name",
+    "Last Name",
     "Email",
     "Phone",
-    "College / Company",
+    "Gender",
+    "Location",
+    "College / Organization",
+    "User Type",
     "Participation Type",
     "Team Name",
     "Team Size",
-    "Team Members",
-    "Experience Level",
-    "GitHub URL",
-    "LinkedIn URL",
-    "Project Idea / Proposal",
+    "Teammates Breakdown",
+    "Looking for Teammates",
     "Status",
   ];
 
@@ -417,17 +559,23 @@ export function exportRegistrationsToCSV(
     escapeCSV(r.id),
     escapeCSV(new Date(r.createdAt).toLocaleString()),
     escapeCSV(r.fullName),
+    escapeCSV(r.firstName || "-"),
+    escapeCSV(r.lastName || "-"),
     escapeCSV(r.email),
     escapeCSV(r.phone),
+    escapeCSV(r.gender || "-"),
+    escapeCSV(r.location || "-"),
     escapeCSV(r.collegeOrCompany),
+    escapeCSV(r.userType || "-"),
     escapeCSV(r.teamType),
     escapeCSV(r.teamName || "-"),
     escapeCSV(r.teamSize || "-"),
-    escapeCSV(r.teamMembers || "-"),
-    escapeCSV(r.experienceLevel || "-"),
-    escapeCSV(r.githubUrl || "-"),
-    escapeCSV(r.linkedinUrl || "-"),
-    escapeCSV(r.projectIdea || "-"),
+    escapeCSV(
+      r.teammates && r.teammates.length
+        ? r.teammates.map((t) => `${t.name} (${t.email}${t.phone ? ", " + t.phone : ""})`).join(" | ")
+        : r.teamMembers || "-"
+    ),
+    escapeCSV(r.lookingForTeammates ? "Yes" : "No"),
     escapeCSV(r.status),
   ]);
 
@@ -466,26 +614,37 @@ export function useOpportunities() {
   return data;
 }
 
+function getOrganizerEvents(userId?: string, userEmail?: string | null): HostedEvent[] {
+  if (!userId && !userEmail) return [];
+  const stored = getStoredHostedEvents().filter((e) =>
+    isEventOrganizer(e, { id: userId, email: userEmail })
+  );
+
+  // Platform admins & Goa organizers get Goa Buildathon 2027 in their management portal
+  if (isPlatformAdmin({ id: userId, email: userEmail })) {
+    const goa = findOpportunity("goa-buildathon-2027");
+    if (goa && !stored.some((e) => e.slug === "goa-buildathon-2027")) {
+      const hostedGoa: HostedEvent = {
+        ...goa,
+        organizerId: userId || "admin",
+        organizerEmail: userEmail || "hello@goabuilds.com",
+        isHosted: true,
+        createdAt: "2026-11-08T00:00:00.000Z",
+        registrationType: "direct",
+      };
+      return [hostedGoa, ...stored];
+    }
+  }
+  return stored;
+}
+
 // React Hook: live synced hosted events strictly belonging to the logged-in organizer
 export function useHostedEvents(userId?: string, userEmail?: string | null) {
-  const [events, setEvents] = useState<HostedEvent[]>(() => {
-    if (!userId && !userEmail) return [];
-    return getStoredHostedEvents().filter((e) =>
-      isEventOrganizer(e, { id: userId, email: userEmail })
-    );
-  });
+  const [events, setEvents] = useState<HostedEvent[]>(() => getOrganizerEvents(userId, userEmail));
 
   useEffect(() => {
     const update = () => {
-      if (!userId && !userEmail) {
-        setEvents([]);
-        return;
-      }
-      setEvents(
-        getStoredHostedEvents().filter((e) =>
-          isEventOrganizer(e, { id: userId, email: userEmail })
-        )
-      );
+      setEvents(getOrganizerEvents(userId, userEmail));
     };
     update();
     window.addEventListener(EVENT_CHANGE_SIGNAL, update);
@@ -499,7 +658,7 @@ export function useHostedEvents(userId?: string, userEmail?: string | null) {
   return events;
 }
 
-// React Hook: live synced registrations for an event
+// React Hook: live synced registrations for an event with cloud Supabase polling
 export function useEventRegistrations(slug: string) {
   const [list, setList] = useState<EventRegistration[]>(() => getRegistrationsBySlug(slug));
 
@@ -510,7 +669,26 @@ export function useEventRegistrations(slug: string) {
     update();
     window.addEventListener(EVENT_CHANGE_SIGNAL, update);
     window.addEventListener("storage", update);
+
+    // Fetch and merge latest cloud registrations from Supabase
+    let active = true;
+    import("@/integrations/supabase/client")
+      .then(({ supabase }) => {
+        supabase
+          .from("registrations" as any)
+          .select("*")
+          .eq("opportunity_slug", slug)
+          .then(({ data, error }) => {
+            if (!active || error || !data || !Array.isArray(data)) return;
+            mergeRemoteRegistrations(data);
+            setList(getRegistrationsBySlug(slug));
+          })
+          .catch(() => {});
+      })
+      .catch(() => {});
+
     return () => {
+      active = false;
       window.removeEventListener(EVENT_CHANGE_SIGNAL, update);
       window.removeEventListener("storage", update);
     };

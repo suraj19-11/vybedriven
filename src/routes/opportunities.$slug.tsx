@@ -218,24 +218,14 @@ function OpportunityDetails() {
   const { user } = useAuth();
   const [regModalOpen, setRegModalOpen] = useState(false);
 
-  // Auto-open modal if returning from auth with ?register=1
+  // Auto-open modal if requested via ?register=1
   useEffect(() => {
-    if (search.register === "1" && user) {
+    if (search.register === "1") {
       setRegModalOpen(true);
     }
-  }, [search.register, user]);
+  }, [search.register]);
 
   const handleRegisterClick = () => {
-    if (!user) {
-      navigate({
-        to: "/auth",
-        search: {
-          mode: "signin",
-          next: `/opportunities/${item.slug}?register=1`,
-        },
-      });
-      return;
-    }
     setRegModalOpen(true);
   };
 
