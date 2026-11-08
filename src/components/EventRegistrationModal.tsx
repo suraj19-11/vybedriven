@@ -158,26 +158,43 @@ export function EventRegistrationModal({
           return;
         }
 
-        try {
-          const res = await fetch("/api/auth/register", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              email: authEmail.trim(),
-              password: authPassword,
-              fullName: authName.trim(),
+        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+          email: authEmail.trim(),
+          password: authPassword,
+          options: {
+            data: {
+              full_name: authName.trim(),
               phone: authPhone.trim() || undefined,
-            }),
-          });
-          const resData = await res.json();
-          if (!res.ok && resData?.error && !resData.error.toLowerCase().includes("already")) {
-            setAuthBusy(false);
-            setAuthError(resData.error);
-            return;
-          }
-        } catch {
-          // Fallback to direct sign-in
+            },
+            emailRedirectTo: `${window.location.origin}/opportunities/${opportunity.slug}?register=1`,
+          },
+        });
+
+        if (signUpErr) {
+          setAuthBusy(false);
+          setAuthError(signUpErr.message);
+          return;
         }
+
+        if (!signUpData.session) {
+          setAuthBusy(false);
+          toast.success("Verification email sent!");
+          setAuthError(
+            `📩 Verification email sent to ${authEmail.trim()}! Please check your inbox (and Spam folder) to verify your account and complete your registration.`
+          );
+          return;
+        }
+
+        toast.success("Account created successfully!");
+        setAuthBusy(false);
+
+        const names = authName.trim().split(" ");
+        setFirstName(names[0] || "");
+        setLastName(names.slice(1).join(" ") || "");
+        setEmail(authEmail.trim());
+        if (authPhone.trim()) setPhone(authPhone.trim());
+        setStep(1);
+        return;
       }
 
       const { data, error: signInErr } = await supabase.auth.signInWithPassword({
@@ -200,7 +217,7 @@ export function EventRegistrationModal({
       toast.success("Signed in successfully! Let's complete your registration.");
       setAuthBusy(false);
 
-      const names = (authName || data.user.user_metadata?.["full_name"] || authEmail.split("@")[0]).trim().split(" ");
+      const names = (data.user.user_metadata?.["full_name"] || authEmail.split("@")[0]).trim().split(" ");
       setFirstName(names[0] || "");
       setLastName(names.slice(1).join(" ") || "");
       setEmail(authEmail.trim());
