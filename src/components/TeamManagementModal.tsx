@@ -101,7 +101,11 @@ export function TeamManagementModal({
   const isTeammate = Boolean(
     user?.email &&
       registration.teammates?.some(
-        (t) => t.email && t.email.toLowerCase() === user.email!.toLowerCase()
+        (t) =>
+          typeof t === "object" &&
+          t &&
+          typeof t.email === "string" &&
+          t.email.toLowerCase() === user.email!.toLowerCase()
       )
   );
 
@@ -130,9 +134,17 @@ export function TeamManagementModal({
       return;
     }
 
+    const target = newEmail.trim().toLowerCase();
     const alreadyAdded =
-      teammates.some((t) => t.email.toLowerCase() === newEmail.trim().toLowerCase()) ||
-      registration.email.toLowerCase() === newEmail.trim().toLowerCase();
+      teammates.some(
+        (t) =>
+          typeof t === "object" &&
+          t &&
+          typeof t.email === "string" &&
+          t.email.toLowerCase() === target
+      ) ||
+      (typeof registration.email === "string" &&
+        registration.email.toLowerCase() === target);
 
     if (alreadyAdded) {
       toast.error("A member with this email address is already in the team.");
@@ -245,7 +257,7 @@ export function TeamManagementModal({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neon">
-                <Users className="size-4" /> Team Management Hub (Unstop Style)
+                <Users className="size-4" /> Team Management &amp; Roster Hub
               </div>
               <DialogTitle className="mt-1 text-xl sm:text-2xl font-black text-foreground">
                 {registration.opportunityTitle}
@@ -351,7 +363,7 @@ export function TeamManagementModal({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div className="flex items-center gap-3.5">
                   <span className="grid size-11 place-items-center rounded-xl bg-emerald-500/20 text-emerald-400 font-extrabold text-lg border border-emerald-500/40 shrink-0">
-                    {registration.fullName.charAt(0).toUpperCase()}
+                    {(registration.fullName || "L").charAt(0).toUpperCase()}
                   </span>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -407,7 +419,7 @@ export function TeamManagementModal({
                             : "bg-amber-500/20 text-amber-400 border-amber-500/40"
                         }`}
                       >
-                        {member.name.charAt(0).toUpperCase()}
+                        {(member.name || "M").charAt(0).toUpperCase()}
                       </span>
                       <div>
                         <div className="flex items-center gap-2 flex-wrap">

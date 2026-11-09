@@ -401,10 +401,16 @@ function ProfilePage() {
                   const isLeader = Boolean(
                     user &&
                       ((user.id && reg.userId === user.id) ||
-                        (user.email && reg.email.toLowerCase() === user.email.toLowerCase()))
+                        (user.email && typeof reg.email === "string" && reg.email.toLowerCase() === user.email.toLowerCase()))
                   );
-                  const myMemberRecord = user?.email
-                    ? reg.teammates?.find((t) => t.email.toLowerCase() === user.email!.toLowerCase())
+                  const myMemberRecord = user?.email && Array.isArray(reg.teammates)
+                    ? reg.teammates.find(
+                        (t) =>
+                          typeof t === "object" &&
+                          t &&
+                          typeof t.email === "string" &&
+                          t.email.toLowerCase() === user.email!.toLowerCase()
+                      )
                     : null;
                   const isConfirmed = myMemberRecord ? myMemberRecord.status === "verified" : isLeader;
 
@@ -448,7 +454,7 @@ function ProfilePage() {
                                     onClick={() => setManagingTeamReg(reg)}
                                     className="mt-2 w-full rounded-full bg-gradient-brand text-black font-extrabold text-xs shadow-glow hover:brightness-105"
                                   >
-                                    <Users className="size-3.5 mr-1" /> Manage Team Roster (Unstop Style)
+                                    <Users className="size-3.5 mr-1" /> Manage Team Roster &amp; Invitations
                                   </Button>
                                 </div>
                               ) : (

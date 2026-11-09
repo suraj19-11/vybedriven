@@ -245,7 +245,7 @@ export function EventRegistrationModal({
   const existingReg = existingRegistrations.find(
     (r) =>
       (user?.id && r.userId === user.id) ||
-      (userIdentifier && r.email.toLowerCase() === userIdentifier.toLowerCase())
+      (userIdentifier && typeof r.email === "string" && r.email.toLowerCase() === userIdentifier.toLowerCase())
   );
 
   useEffect(() => {
@@ -346,7 +346,9 @@ export function EventRegistrationModal({
     setSubmitting(true);
     try {
       const fullParticipantName = `${firstName.trim()} ${lastName.trim()}`.trim();
-      const teamSummary = teammates.map((t) => `${t.name.trim()} (${t.email.trim()})`).join(", ");
+      const teamSummary = teammates
+        .map((t) => `${(t.name || "Member").trim()} (${(t.email || "").trim()})`)
+        .join(", ");
 
       const reg = submitRegistration({
         opportunitySlug: opportunity.slug,

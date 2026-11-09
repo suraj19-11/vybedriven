@@ -165,7 +165,7 @@ function ManageEventsPage() {
     return eventRegistrations.filter((r) => {
       const matchesStatus =
         applicantStatusFilter === "All" || r.status === applicantStatusFilter;
-      const haystack = `${r.fullName} ${r.email} ${r.phone} ${r.collegeOrCompany} ${r.teamName || ""}`.toLowerCase();
+      const haystack = `${r.fullName || ""} ${r.email || ""} ${r.phone || ""} ${r.collegeOrCompany || ""} ${r.teamName || ""}`.toLowerCase();
       const matchesQuery = !applicantQuery || haystack.includes(applicantQuery.toLowerCase());
       return matchesStatus && matchesQuery;
     });

@@ -548,10 +548,16 @@ function OpportunityDetails() {
       registrations.find(
         (r) =>
           (user.id && r.userId === user.id) ||
-          (user.email && r.email.toLowerCase() === user.email.toLowerCase()) ||
+          (user.email && typeof r.email === "string" && r.email.toLowerCase() === user.email.toLowerCase()) ||
           (user.email &&
-            r.teammates &&
-            r.teammates.some((t) => t.email.toLowerCase() === user.email!.toLowerCase()))
+            Array.isArray(r.teammates) &&
+            r.teammates.some(
+              (t) =>
+                typeof t === "object" &&
+                t &&
+                typeof t.email === "string" &&
+                t.email.toLowerCase() === user.email!.toLowerCase()
+            ))
       ) || null
     );
   }, [registrations, user]);

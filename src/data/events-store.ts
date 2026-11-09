@@ -557,7 +557,7 @@ export function updateTeamRoster(
   }
 
   const teamSummary = updates.teammates
-    .map((t) => `${t.name.trim()} (${t.email.trim()})`)
+    .map((t) => `${(t.name || "Member").trim()} (${(t.email || "").trim()})`)
     .join(", ");
 
   const updated: EventRegistration = {
@@ -615,7 +615,7 @@ export function confirmTeammateInvitation(
   let found = false;
 
   const updatedTeammates = current.teammates.map((t) => {
-    if (t.email.trim().toLowerCase() === targetEmail) {
+    if (typeof t === "object" && t && typeof t.email === "string" && t.email.trim().toLowerCase() === targetEmail) {
       found = true;
       return {
         ...t,
@@ -751,8 +751,10 @@ export function exportRegistrationsToCSV(
     escapeCSV(r.teamName || "-"),
     escapeCSV(r.teamSize || "-"),
     escapeCSV(
-      r.teammates && r.teammates.length
-        ? r.teammates.map((t) => `${t.name} (${t.email}${t.phone ? ", " + t.phone : ""})`).join(" | ")
+      r.teammates && Array.isArray(r.teammates) && r.teammates.length
+        ? r.teammates
+            .map((t) => `${t?.name || "Member"} (${t?.email || ""}${t?.phone ? ", " + t.phone : ""})`)
+            .join(" | ")
         : r.teamMembers || "-"
     ),
     escapeCSV(r.lookingForTeammates ? "Yes" : "No"),

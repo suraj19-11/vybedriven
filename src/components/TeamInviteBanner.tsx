@@ -31,15 +31,22 @@ export function TeamInviteBanner() {
 
         // 1. Check direct URL query param invite
         if (confirmTeamId) {
-          const matched = allRegs.find((r) => r.id === confirmTeamId);
-          if (matched && matched.teammates) {
+          const matched = allRegs.find((r) => r && r.id === confirmTeamId);
+          if (matched && Array.isArray(matched.teammates)) {
             const targetEmail = (inviteEmail || user?.email || "").trim().toLowerCase();
-            const tm = matched.teammates.find(
-              (t) => t.email.toLowerCase() === targetEmail && t.status !== "verified"
-            );
-            if (tm) {
-              setPendingInvite({ registration: matched, memberEmail: tm.email });
-              return;
+            if (targetEmail) {
+              const tm = matched.teammates.find(
+                (t) =>
+                  typeof t === "object" &&
+                  t &&
+                  typeof t.email === "string" &&
+                  t.email.trim().toLowerCase() === targetEmail &&
+                  t.status !== "verified"
+              );
+              if (tm && tm.email) {
+                setPendingInvite({ registration: matched, memberEmail: tm.email });
+                return;
+              }
             }
           }
         }
@@ -48,11 +55,16 @@ export function TeamInviteBanner() {
         if (user?.email) {
           const userEmail = user.email.trim().toLowerCase();
           for (const reg of allRegs) {
-            if (reg.teammates && Array.isArray(reg.teammates)) {
+            if (reg && Array.isArray(reg.teammates)) {
               const tm = reg.teammates.find(
-                (t) => t.email.toLowerCase() === userEmail && t.status !== "verified"
+                (t) =>
+                  typeof t === "object" &&
+                  t &&
+                  typeof t.email === "string" &&
+                  t.email.trim().toLowerCase() === userEmail &&
+                  t.status !== "verified"
               );
-              if (tm) {
+              if (tm && tm.email) {
                 setPendingInvite({ registration: reg, memberEmail: tm.email });
                 return;
               }
@@ -61,8 +73,9 @@ export function TeamInviteBanner() {
         }
 
         setPendingInvite(null);
-      } catch {
-        // Ignore parsing errors
+      } catch (err) {
+        // Guarantee safety - never crash root router
+        setPendingInvite(null);
       }
     };
 
@@ -76,15 +89,16 @@ export function TeamInviteBanner() {
     };
   }, [user]);
 
-  if (!pendingInvite) return null;
+  if (!pendingInvite || !pendingInvite.registration) return null;
 
   const { registration, memberEmail } = pendingInvite;
 
   const handleAccept = () => {
     try {
+      if (!registration || !memberEmail) return;
       const ok = confirmTeammateInvitation(registration.id, memberEmail);
       if (ok) {
-        toast.success(`🎉 You've officially joined Team "${registration.teamName}" for ${registration.opportunityTitle}!`);
+        toast.success(`🎉 You've officially joined Team "${registration.teamName || "Squad"}" for ${registration.opportunityTitle || "Hackathon"}!`);
         setPendingInvite(null);
 
         // Clean URL query params if present
@@ -96,7 +110,7 @@ export function TeamInviteBanner() {
         }
       }
     } catch (err: any) {
-      toast.error(err.message || "Failed to confirm team invitation.");
+      toast.error(err?.message || "Failed to confirm team invitation.");
     }
   };
 
@@ -116,10 +130,10 @@ export function TeamInviteBanner() {
                 <span className="size-2 rounded-full bg-amber-400 animate-pulse" />
               </div>
               <p className="mt-1 text-sm font-bold text-foreground">
-                {registration.fullName} invited you to join Team "{registration.teamName || "Squad"}"
+                {registration.fullName || "A teammate"} invited you to join Team "{registration.teamName || "Squad"}"
               </p>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Event: {registration.opportunityTitle}
+                Event: {registration.opportunityTitle || "Hackathon"}
               </p>
             </div>
           </div>
