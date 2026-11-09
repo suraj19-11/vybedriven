@@ -468,7 +468,8 @@ export function mergeRemoteRegistrations(remoteRows: any[]): void {
       teamName: row.team_name,
       teamSize: row.team_size,
       teamMembers: row.team_members,
-      teammates: row.teammates,
+      teamCode: row.team_code || row.id,
+      teammates: row.teammates || [],
       lookingForTeammates: row.looking_for_teammates,
       termsAccepted: row.terms_accepted,
       status: row.status || "Registered",
@@ -661,8 +662,43 @@ export function confirmTeammateInvitation(
   return true;
 }
 
-// Find team by team code or registration id
-export function findTeamByCode(code: string): EventRegistration | null {
+// Find team by team code or registration id (checks local cache first, then Supabase cloud)
+export async function findTeamByCode(code: string): Promise<EventRegistration | null> {
+  if (!code || typeof code !== "string") return null;
+  const clean = code.trim().toLowerCase();
+  const list = getStoredRegistrations();
+  const localMatch = list.find(
+    (r) =>
+      r &&
+      r.teamType === "team" &&
+      ((r.id && r.id.trim().toLowerCase() === clean) ||
+        (r.teamCode && r.teamCode.trim().toLowerCase() === clean))
+  );
+  if (localMatch) return localMatch;
+
+  // Cloud check on Supabase
+  try {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data } = await supabase
+      .from("registrations" as any)
+      .select("*")
+      .or(`id.ilike.${clean},team_name.ilike.${clean}`)
+      .maybeSingle();
+
+    if (data) {
+      mergeRemoteRegistrations([data]);
+      const freshList = getStoredRegistrations();
+      return freshList.find((r) => r.id === data.id) || null;
+    }
+  } catch (err) {
+    console.warn("[Cloud Team Lookup] Error checking team code:", err);
+  }
+
+  return null;
+}
+
+// Synchronous local team finder for instant UI checks
+export function findLocalTeamByCode(code: string): EventRegistration | null {
   if (!code || typeof code !== "string") return null;
   const clean = code.trim().toLowerCase();
   const list = getStoredRegistrations();
@@ -677,8 +713,8 @@ export function findTeamByCode(code: string): EventRegistration | null {
   );
 }
 
-// Join team with team code (creates verified member entry & updates roster)
-export function joinTeamWithCode(
+// Join team with team code (creates verified member entry & updates roster across cloud & local)
+export async function joinTeamWithCode(
   teamCode: string,
   memberData: {
     userId?: string;
@@ -689,13 +725,15 @@ export function joinTeamWithCode(
     department?: string;
     graduationYear?: string;
   }
-): EventRegistration {
+): Promise<EventRegistration> {
   if (!teamCode || typeof teamCode !== "string") {
     throw new Error("Please enter a valid Team Code.");
   }
   const cleanCode = teamCode.trim().toLowerCase();
-  const list = getStoredRegistrations();
-  const index = list.findIndex(
+
+  // 1. Check local list
+  let list = getStoredRegistrations();
+  let index = list.findIndex(
     (r) =>
       r &&
       r.teamType === "team" &&
@@ -703,11 +741,34 @@ export function joinTeamWithCode(
         (r.teamCode && r.teamCode.trim().toLowerCase() === cleanCode))
   );
 
-  if (index === -1) {
-    throw new Error("Team code not found. Please verify the code with your Team Leader and try again.");
+  let current: EventRegistration | null = index !== -1 ? list[index] : null;
+
+  // 2. If not found locally, fetch directly from Supabase
+  if (!current) {
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data, error } = await supabase
+        .from("registrations" as any)
+        .select("*")
+        .or(`id.ilike.${cleanCode},team_name.ilike.${cleanCode}`)
+        .maybeSingle();
+
+      if (error || !data) {
+        throw new Error("Team code not found. Please verify the code with your Team Leader and try again.");
+      }
+
+      mergeRemoteRegistrations([data]);
+      list = getStoredRegistrations();
+      index = list.findIndex((r) => r.id === data.id);
+      current = index !== -1 ? list[index] : null;
+    } catch (err: any) {
+      throw new Error(err.message || "Team code not found. Please verify the code with your Team Leader.");
+    }
   }
 
-  const current = list[index];
+  if (!current) {
+    throw new Error("Team code not found. Please verify the code with your Team Leader and try again.");
+  }
 
   // Check if opportunity is closed
   const opp = findOpportunity(current.opportunitySlug);
@@ -715,7 +776,7 @@ export function joinTeamWithCode(
     throw new Error("Registration for this hackathon is closed. Team roster has been locked.");
   }
 
-  const existingTeammates = Array.isArray(current.teammates) ? [...current.teammates] : [];
+  const existingTeammates: TeammateDetail[] = Array.isArray(current.teammates) ? [...current.teammates] : [];
   const currentTotal = 1 + existingTeammates.length; // 1 Leader + teammates
   if (currentTotal >= 4) {
     throw new Error(`Team "${current.teamName || "Squad"}" is already full (maximum 4 members allowed).`);
@@ -759,6 +820,7 @@ export function joinTeamWithCode(
     teammates: updatedTeammates,
     teamMembers: teamSummary,
     teamSize: `${1 + updatedTeammates.length} members`,
+    teamCode: current.teamCode || current.id,
     updatedAt: new Date().toISOString(),
   };
 
@@ -767,23 +829,26 @@ export function joinTeamWithCode(
   if (typeof window !== "undefined") {
     localStorage.setItem(STORAGE_REGISTRATIONS, JSON.stringify(list));
     notifyStoreChange();
+  }
 
-    // Background sync to Supabase
-    import("@/integrations/supabase/client")
-      .then(({ supabase }) => {
-        supabase
-          .from("registrations" as any)
-          .update({
-            team_size: updatedTeam.teamSize,
-            team_members: updatedTeam.teamMembers,
-            teammates: updatedTeam.teammates,
-          })
-          .eq("id", updatedTeam.id)
-          .then(({ error }) => {
-            if (error) console.warn("[Database Sync] Team member join notice:", error.message);
-          });
+  // 3. Persist directly to Supabase cloud
+  try {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { error: sbErr } = await supabase
+      .from("registrations" as any)
+      .update({
+        team_size: updatedTeam.teamSize,
+        team_members: updatedTeam.teamMembers,
+        teammates: updatedTeam.teammates,
+        updated_at: new Date().toISOString(),
       })
-      .catch(() => {});
+      .eq("id", updatedTeam.id);
+
+    if (sbErr) {
+      console.warn("[Database Sync] Team member join Supabase notice:", sbErr.message);
+    }
+  } catch (err) {
+    console.warn("[Database Sync] Team member join error:", err);
   }
 
   return updatedTeam;
@@ -806,13 +871,23 @@ export function updateRegistrationStatus(
   return true;
 }
 
-// Check if user is registered for an opportunity
+// Check if user is registered for an opportunity (supports Leader & Verified Teammates)
 export function isUserRegistered(slug: string, userIdOrEmail?: string): boolean {
   if (!userIdOrEmail) return false;
   const list = getRegistrationsBySlug(slug);
   const query = userIdOrEmail.toLowerCase().trim();
   return list.some(
-    (r) => (r.userId && r.userId === userIdOrEmail) || r.email.toLowerCase().trim() === query
+    (r) =>
+      (r.userId && r.userId === userIdOrEmail) ||
+      (r.email && r.email.toLowerCase().trim() === query) ||
+      (Array.isArray(r.teammates) &&
+        r.teammates.some(
+          (t) =>
+            typeof t === "object" &&
+            t &&
+            typeof t.email === "string" &&
+            t.email.toLowerCase().trim() === query
+        ))
   );
 }
 
@@ -971,11 +1046,13 @@ export function useHostedEvents(userId?: string, userEmail?: string | null) {
   return events;
 }
 
-// React Hook: live synced registrations for an event with cloud Supabase polling
+// React Hook: live synced registrations for an event with cloud Supabase polling & realtime focus
 export function useEventRegistrations(slug: string) {
   const [list, setList] = useState<EventRegistration[]>(() => getRegistrationsBySlug(slug));
 
   useEffect(() => {
+    let active = true;
+
     const update = () => {
       setList(getRegistrationsBySlug(slug));
     };
@@ -983,25 +1060,31 @@ export function useEventRegistrations(slug: string) {
     window.addEventListener(EVENT_CHANGE_SIGNAL, update);
     window.addEventListener("storage", update);
 
-    // Fetch and merge latest cloud registrations from Supabase
-    let active = true;
-    import("@/integrations/supabase/client")
-      .then(({ supabase }) => {
-        supabase
-          .from("registrations" as any)
-          .select("*")
-          .eq("opportunity_slug", slug)
-          .then(({ data, error }) => {
-            if (!active || error || !data || !Array.isArray(data)) return;
-            mergeRemoteRegistrations(data);
-            setList(getRegistrationsBySlug(slug));
-          })
-          .catch(() => {});
-      })
-      .catch(() => {});
+    const fetchCloud = () => {
+      import("@/integrations/supabase/client")
+        .then(({ supabase }) => {
+          supabase
+            .from("registrations" as any)
+            .select("*")
+            .eq("opportunity_slug", slug)
+            .then(({ data, error }) => {
+              if (!active || error || !data || !Array.isArray(data)) return;
+              mergeRemoteRegistrations(data);
+              setList(getRegistrationsBySlug(slug));
+            })
+            .catch(() => {});
+        })
+        .catch(() => {});
+    };
+
+    fetchCloud();
+    const interval = setInterval(fetchCloud, 4000);
+    window.addEventListener("focus", fetchCloud);
 
     return () => {
       active = false;
+      clearInterval(interval);
+      window.removeEventListener("focus", fetchCloud);
       window.removeEventListener(EVENT_CHANGE_SIGNAL, update);
       window.removeEventListener("storage", update);
     };

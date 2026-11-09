@@ -33,6 +33,8 @@ import {
   confirmTeammateInvitation,
   findOpportunity,
   isPlatformAdmin,
+  mergeRemoteRegistrations,
+  getStoredRegistrations,
   type EventRegistration,
   type TeammateDetail,
 } from "@/data/events-store";
@@ -70,7 +72,7 @@ export function TeamManagementModal({
 
   const [saving, setSaving] = useState(false);
 
-  // Initialize from registration
+  // Initialize from registration and fetch latest cloud state
   useEffect(() => {
     if (registration) {
       setTeamName(registration.teamName || "My Squad");
@@ -83,7 +85,36 @@ export function TeamManagementModal({
       );
       setShowAddForm(false);
     }
-  }, [registration]);
+
+    if (open && registration?.id) {
+      import("@/integrations/supabase/client")
+        .then(({ supabase }) => {
+          supabase
+            .from("registrations" as any)
+            .select("*")
+            .eq("id", registration.id)
+            .maybeSingle()
+            .then(({ data }) => {
+              if (data) {
+                mergeRemoteRegistrations([data]);
+                const fresh = getStoredRegistrations().find((r) => r.id === registration.id);
+                if (fresh) {
+                  setTeamName(fresh.teamName || "My Squad");
+                  setLookingForTeammates(Boolean(fresh.lookingForTeammates));
+                  setTeammates(
+                    (fresh.teammates || []).map((t) => ({
+                      ...t,
+                      status: t.status || "pending",
+                    }))
+                  );
+                }
+              }
+            })
+            .catch(() => {});
+        })
+        .catch(() => {});
+    }
+  }, [registration, open]);
 
   if (!registration) return null;
 
@@ -589,140 +620,59 @@ export function TeamManagementModal({
               );
             })}
 
-            {/* Add Teammate Form or Button */}
-            {canManageTeam && remainingSlots > 0 && (
-              <>
-                {showAddForm ? (
-                  <form
-                    onSubmit={handleAddMember}
-                    className="rounded-2xl border border-neon/40 bg-surface-2/90 p-4 sm:p-5 space-y-4 animate-in fade-in duration-200"
-                  >
-                    <div className="flex items-center justify-between border-b border-border/60 pb-2">
-                      <h4 className="text-sm font-bold text-foreground flex items-center gap-2">
-                        <UserPlus className="size-4 text-neon" /> Add Teammate #{totalMembers + 1}
-                      </h4>
-                      <button
-                        type="button"
-                        onClick={() => setShowAddForm(false)}
-                        className="text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="size-4" />
-                      </button>
-                    </div>
+            {/* Invite Teammates via Team Code notice */}
+            {canManageTeam && remainingSlots > 0 ? (
+              <div className="rounded-2xl border border-neon/40 bg-gradient-to-br from-neon/10 via-surface-2 to-surface p-4 sm:p-5 space-y-3 shadow-glow-soft">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="size-4 text-neon" />
+                    <span className="text-xs sm:text-sm font-bold text-foreground">
+                      {remainingSlots} Teammate Slot{remainingSlots > 1 ? "s" : ""} Available
+                    </span>
+                  </div>
+                  <span className="rounded-full bg-neon/15 px-2.5 py-0.5 text-[10px] font-bold text-neon">
+                    Team Code Instant Joining
+                  </span>
+                </div>
 
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div>
-                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
-                          Full Name <span className="text-destructive">*</span>
-                        </label>
-                        <input
-                          required
-                          type="text"
-                          value={newName}
-                          onChange={(e) => setNewName(e.target.value)}
-                          placeholder="e.g. Alex Sharma"
-                          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
-                        />
-                      </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Share your <strong>Team Code</strong> or <strong>Invite Link</strong> with your teammates. They will open Vybe Driven, click &quot;Join Team with Code&quot;, and enter your code to join your squad with zero email hassles!
+                </p>
 
-                      <div>
-                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
-                          Email Address <span className="text-destructive">*</span>
-                        </label>
-                        <input
-                          required
-                          type="email"
-                          value={newEmail}
-                          onChange={(e) => setNewEmail(e.target.value)}
-                          placeholder="teammate@gmail.com"
-                          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
-                          Mobile / WhatsApp Number
-                        </label>
-                        <input
-                          type="tel"
-                          value={newPhone}
-                          onChange={(e) => setNewPhone(e.target.value)}
-                          placeholder="10-digit number"
-                          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
-                          College / Company / Job
-                        </label>
-                        <input
-                          type="text"
-                          value={newCollege}
-                          onChange={(e) => setNewCollege(e.target.value)}
-                          placeholder="e.g. IIT Bombay / Google"
-                          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
-                          Department / Branch
-                        </label>
-                        <input
-                          type="text"
-                          value={newDept}
-                          onChange={(e) => setNewDept(e.target.value)}
-                          placeholder="e.g. Computer Engineering"
-                          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
-                          Graduation Year
-                        </label>
-                        <input
-                          type="text"
-                          value={newYear}
-                          onChange={(e) => setNewYear(e.target.value)}
-                          placeholder="e.g. 2026 or 2027"
-                          className="w-full rounded-xl border border-border bg-background px-3 py-2 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex items-center justify-end gap-2 pt-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setShowAddForm(false)}
-                        className="rounded-full text-xs"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        type="submit"
-                        size="sm"
-                        className="rounded-full bg-neon text-black font-bold text-xs shadow-glow hover:brightness-110"
-                      >
-                        Add Member to Roster
-                      </Button>
-                    </div>
-                  </form>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setShowAddForm(true)}
-                    className="w-full rounded-2xl border-2 border-dashed border-border py-4 px-4 text-center text-xs sm:text-sm font-bold text-muted-foreground hover:border-neon hover:text-neon hover:bg-neon/5 transition flex items-center justify-center gap-2"
-                  >
-                    <UserPlus className="size-4" />
-                    <span>+ Add {totalMembers === 1 ? "2nd" : totalMembers === 2 ? "3rd" : "4th"} Member</span>
-                  </button>
-                )}
-              </>
-            )}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-xl border border-neon/30 bg-black/60 p-3">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                      Official Team Code
+                    </span>
+                    <span className="font-mono text-lg sm:text-xl font-black text-neon select-all">
+                      {registration.teamCode || registration.id}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleCopyTeamCode}
+                      className="rounded-lg bg-neon/15 text-neon border border-neon/30 hover:bg-neon/25 text-xs font-bold"
+                    >
+                      <Copy className="size-3.5 mr-1" /> Copy Code
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleShareTeamOnWhatsApp}
+                      className="rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30 text-xs font-bold"
+                    >
+                      <MessageCircle className="size-3.5 mr-1" /> WhatsApp Invite
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : canManageTeam && remainingSlots === 0 ? (
+              <div className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-center text-xs font-bold text-emerald-400">
+                🎉 Team Roster Full (4/4 Members Verified)
+              </div>
+            ) : null}
           </div>
 
           {/* Unstop Legend */}

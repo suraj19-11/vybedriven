@@ -7,6 +7,7 @@ import {
   getRegistrationsBySlug,
   exportRegistrationsToCSV,
   confirmTeammateInvitation,
+  mergeRemoteRegistrations,
   EVENT_CHANGE_SIGNAL,
   type EventRegistration,
 } from "@/data/events-store";
@@ -90,11 +91,23 @@ function ProfilePage() {
     const onSync = () => setSyncTick((t) => t + 1);
     window.addEventListener(EVENT_CHANGE_SIGNAL, onSync);
     window.addEventListener("storage", onSync);
+
+    // Sync cloud registrations from Supabase
+    supabase
+      .from("registrations" as any)
+      .select("*")
+      .then(({ data, error }) => {
+        if (!error && data && Array.isArray(data)) {
+          mergeRemoteRegistrations(data);
+          setSyncTick((t) => t + 1);
+        }
+      });
+
     return () => {
       window.removeEventListener(EVENT_CHANGE_SIGNAL, onSync);
       window.removeEventListener("storage", onSync);
     };
-  }, []);
+  }, [user.id, user.email]);
 
   const myHostedEvents = useHostedEvents(user.id, user.email);
   const myRegistrations = useMemo(

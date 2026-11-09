@@ -548,8 +548,6 @@ function OpportunityDetails() {
   const regCount = registrations.length;
 
   const userIdentifier = user?.email || user?.id;
-  const isRegistered = isUserRegistered(item.slug, userIdentifier);
-  const isHost = isEventOrganizer(item, user);
 
   const userRegRecord = useMemo(() => {
     if (!user) return null;
@@ -570,6 +568,9 @@ function OpportunityDetails() {
       ) || null
     );
   }, [registrations, user]);
+
+  const isRegistered = Boolean(userRegRecord) || isUserRegistered(item.slug, userIdentifier);
+  const isHost = isEventOrganizer(item, user);
 
   const facts = [
     { icon: Calendar, label: "Event dates", value: item.date },

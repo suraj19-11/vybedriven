@@ -252,31 +252,50 @@ export function EventRegistrationModal({
     }
   };
 
-  // Check if existing registration exists
+  // Check if existing registration exists (Leader or Teammate)
   const existingRegistrations = getRegistrationsBySlug(opportunity.slug);
   const userIdentifier = user?.email || email;
   const existingReg = existingRegistrations.find(
     (r) =>
       (user?.id && r.userId === user.id) ||
-      (userIdentifier && typeof r.email === "string" && r.email.toLowerCase() === userIdentifier.toLowerCase())
+      (userIdentifier && typeof r.email === "string" && r.email.toLowerCase() === userIdentifier.toLowerCase()) ||
+      (userIdentifier &&
+        Array.isArray(r.teammates) &&
+        r.teammates.some(
+          (t) =>
+            typeof t === "object" &&
+            t &&
+            typeof t.email === "string" &&
+            t.email.toLowerCase() === userIdentifier.toLowerCase()
+        ))
   );
 
   useEffect(() => {
+    let active = true;
     if (initialJoinCode) {
       setRegFlow("join");
       setTeamCodeInput(initialJoinCode);
-      const found = findTeamByCode(initialJoinCode);
-      setMatchedTeam(found);
+      findTeamByCode(initialJoinCode).then((found) => {
+        if (active) setMatchedTeam(found);
+      });
     }
+    return () => {
+      active = false;
+    };
   }, [initialJoinCode, open]);
 
   useEffect(() => {
+    let active = true;
     if (teamCodeInput.trim().length >= 4) {
-      const found = findTeamByCode(teamCodeInput.trim());
-      setMatchedTeam(found);
+      findTeamByCode(teamCodeInput.trim()).then((found) => {
+        if (active) setMatchedTeam(found);
+      });
     } else {
       setMatchedTeam(null);
     }
+    return () => {
+      active = false;
+    };
   }, [teamCodeInput]);
 
   useEffect(() => {
@@ -307,7 +326,7 @@ export function EventRegistrationModal({
   }, [open, user, profile, existingReg, initialJoinCode]);
 
   // Handle Join Team with Code
-  const handleJoinTeamSubmit = (e: FormEvent) => {
+  const handleJoinTeamSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user) {
       toast.error("Please sign in or create an account first.");
@@ -333,7 +352,7 @@ export function EventRegistrationModal({
     setSubmitting(true);
     try {
       const fullParticipantName = `${firstName.trim()} ${lastName.trim()}`.trim();
-      const updated = joinTeamWithCode(teamCodeInput.trim(), {
+      const updated = await joinTeamWithCode(teamCodeInput.trim(), {
         userId: user.id,
         fullName: fullParticipantName,
         email: user.email || email.trim().toLowerCase(),
