@@ -34,6 +34,12 @@ export type TeammateDetail = {
   name: string;
   email: string;
   phone?: string;
+  collegeOrCompany?: string;
+  department?: string;
+  graduationYear?: string;
+  status?: "verified" | "pending" | "unsaved";
+  role?: "leader" | "member";
+  confirmedAt?: string;
 };
 
 export type EventRegistration = {
@@ -49,6 +55,8 @@ export type EventRegistration = {
   gender?: string;
   location?: string;
   collegeOrCompany: string;
+  department?: string;
+  graduationYear?: string;
   userType?: string;
   teamType: "solo" | "team";
   teamName?: string;
@@ -63,6 +71,8 @@ export type EventRegistration = {
   projectIdea?: string;
   status: "Registered" | "Shortlisted" | "Confirmed" | "Attended" | "Cancelled";
   createdAt: string;
+  updatedAt?: string;
+  teamSubmitted?: boolean;
 };
 
 const STORAGE_HOSTED_EVENTS = "hd_hosted_events";
@@ -481,7 +491,7 @@ export function getRegistrationCount(slug: string): number {
   return getRegistrationsBySlug(slug).length;
 }
 
-// Get all registrations made by a user (builder profile view)
+// Get all registrations made by a user (builder profile view, including leader & invited teammates)
 export function getUserRegistrations(
   userId?: string,
   userEmail?: string | null
@@ -491,10 +501,157 @@ export function getUserRegistrations(
   const uEmail = userEmail?.trim().toLowerCase();
 
   return getStoredRegistrations().filter((r) => {
+    // 1. Primary leader / registrant
     if (uId && r.userId && r.userId === uId) return true;
     if (uEmail && r.email && r.email.trim().toLowerCase() === uEmail) return true;
+    // 2. Teammate member
+    if (
+      uEmail &&
+      r.teammates &&
+      Array.isArray(r.teammates) &&
+      r.teammates.some((t) => t.email && t.email.trim().toLowerCase() === uEmail)
+    ) {
+      return true;
+    }
     return false;
   });
+}
+
+// Update team roster (team leader only, while hackathon registration is open)
+export function updateTeamRoster(
+  registrationId: string,
+  updates: {
+    teamName?: string;
+    teammates: TeammateDetail[];
+    lookingForTeammates?: boolean;
+  },
+  user?: { id?: string; email?: string | null } | null
+): EventRegistration {
+  const list = getStoredRegistrations();
+  const index = list.findIndex((r) => r.id === registrationId);
+  if (index === -1) {
+    throw new Error("Registration record not found.");
+  }
+
+  const current = list[index];
+
+  // Authorization check
+  const uId = user?.id?.trim();
+  const uEmail = user?.email?.trim().toLowerCase();
+  const isLeader =
+    (uId && current.userId && current.userId === uId) ||
+    (uEmail && current.email.toLowerCase() === uEmail);
+
+  if (!isLeader) {
+    throw new Error("Unauthorized: Only the team leader can modify team roster.");
+  }
+
+  // Check if event is still open
+  const opp = findOpportunity(current.opportunitySlug);
+  if (opp && (opp.status === "Event full" || opp.status === "Sold out")) {
+    throw new Error("Hackathon registration is closed. Team roster has been locked and automatically submitted.");
+  }
+
+  const teamSummary = updates.teammates
+    .map((t) => `${t.name.trim()} (${t.email.trim()})`)
+    .join(", ");
+
+  const updated: EventRegistration = {
+    ...current,
+    teamName: updates.teamName?.trim() || current.teamName,
+    teammates: updates.teammates,
+    teamMembers: teamSummary || undefined,
+    teamSize: `${1 + updates.teammates.length} members`,
+    lookingForTeammates: updates.lookingForTeammates ?? current.lookingForTeammates,
+    updatedAt: new Date().toISOString(),
+  };
+
+  list[index] = updated;
+
+  if (typeof window !== "undefined") {
+    localStorage.setItem(STORAGE_REGISTRATIONS, JSON.stringify(list));
+    notifyStoreChange();
+
+    // Background sync to Supabase
+    import("@/integrations/supabase/client")
+      .then(({ supabase }) => {
+        supabase
+          .from("registrations" as any)
+          .update({
+            team_name: updated.teamName,
+            team_size: updated.teamSize,
+            team_members: updated.teamMembers,
+            teammates: updated.teammates,
+            looking_for_teammates: updated.lookingForTeammates,
+          })
+          .eq("id", updated.id)
+          .then(({ error }) => {
+            if (error) console.warn("[Database Sync] Team roster update notice:", error.message);
+          });
+      })
+      .catch(() => {});
+  }
+
+  return updated;
+}
+
+// Confirm teammate invitation (called when teammate accepts from mail or banner)
+export function confirmTeammateInvitation(
+  registrationId: string,
+  teammateEmail: string
+): boolean {
+  const list = getStoredRegistrations();
+  const index = list.findIndex((r) => r.id === registrationId);
+  if (index === -1) return false;
+
+  const current = list[index];
+  if (!current.teammates || !current.teammates.length) return false;
+
+  const targetEmail = teammateEmail.trim().toLowerCase();
+  let found = false;
+
+  const updatedTeammates = current.teammates.map((t) => {
+    if (t.email.trim().toLowerCase() === targetEmail) {
+      found = true;
+      return {
+        ...t,
+        status: "verified" as const,
+        confirmedAt: new Date().toISOString(),
+      };
+    }
+    return t;
+  });
+
+  if (!found) return false;
+
+  const updated: EventRegistration = {
+    ...current,
+    teammates: updatedTeammates,
+    updatedAt: new Date().toISOString(),
+  };
+
+  list[index] = updated;
+
+  if (typeof window !== "undefined") {
+    localStorage.setItem(STORAGE_REGISTRATIONS, JSON.stringify(list));
+    notifyStoreChange();
+
+    import("@/integrations/supabase/client")
+      .then(({ supabase }) => {
+        supabase
+          .from("registrations" as any)
+          .update({
+            teammates: updatedTeammates,
+          })
+          .eq("id", updated.id)
+          .then(({ error }) => {
+            if (error) console.warn("[Database Sync] Teammate confirmation notice:", error.message);
+          });
+      })
+      .catch(() => {});
+  }
+
+  return true;
 }
 
 // Update participant registration status

@@ -14,6 +14,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider } from "@/lib/auth";
+import { TeamInviteBanner } from "@/components/TeamInviteBanner";
 import type { User } from "@supabase/supabase-js";
 
 function NotFoundComponent() {
@@ -241,6 +242,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider value={{ user, profile, loading, refreshProfile }}>
         <Outlet />
+        <TeamInviteBanner />
       </AuthProvider>
     </QueryClientProvider>
   );

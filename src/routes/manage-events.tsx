@@ -24,6 +24,14 @@ import {
 } from "lucide-react";
 import { Navbar, Footer } from "@/components/SiteChrome";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { TeamManagementModal } from "@/components/TeamManagementModal";
 import { useAuth } from "@/lib/auth";
 import {
   useHostedEvents,
@@ -90,6 +98,8 @@ function ManageEventsPage() {
   const [applicantQuery, setApplicantQuery] = useState("");
   const [applicantStatusFilter, setApplicantStatusFilter] = useState<string>("All");
   const [syncTick, setSyncTick] = useState(0);
+  const [inspectingApplicant, setInspectingApplicant] = useState<EventRegistration | null>(null);
+  const [managingTeamReg, setManagingTeamReg] = useState<EventRegistration | null>(null);
 
   // Sync Supabase registrations on mount and listen to store changes
   useEffect(() => {
@@ -608,36 +618,62 @@ function ManageEventsPage() {
                             )}
                           </td>
 
-                          {/* Team */}
+                          {/* Team Details */}
                           <td className="px-4 py-3.5 text-xs">
                             {applicant.teamType === "team" ? (
-                              <div>
+                              <div className="space-y-1.5">
                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                  <span className="font-semibold text-neon">
-                                    {applicant.teamName}
+                                  <span className="font-extrabold text-neon">
+                                    {applicant.teamName || "Squad"}
                                   </span>
-                                  <span className="text-muted-foreground text-[11px]">
-                                    ({applicant.teammates && applicant.teammates.length > 0 ? `${applicant.teammates.length + 1} Members` : applicant.teamSize || "Team"})
+                                  <span className="rounded-full bg-surface-2 border border-border px-1.5 py-0.2 text-[10px] font-semibold text-muted-foreground">
+                                    {applicant.teammates && applicant.teammates.length > 0
+                                      ? `${applicant.teammates.length + 1} Members`
+                                      : applicant.teamSize || "Team"}
                                   </span>
                                   {applicant.lookingForTeammates && (
-                                    <span className="rounded bg-primary/20 px-1 py-0.5 text-[9px] font-bold text-neon">
-                                      Looking for teammates
+                                    <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[9px] font-bold text-neon">
+                                      Seeking teammates
                                     </span>
                                   )}
                                 </div>
-                                {applicant.teammates && applicant.teammates.length > 0 ? (
-                                  <div className="mt-1 space-y-0.5 text-[10px] text-muted-foreground max-w-xs">
-                                    {applicant.teammates.map((m, idx) => (
-                                      <div key={idx} className="truncate">
-                                        • {m.name} ({m.email})
-                                      </div>
-                                    ))}
-                                  </div>
-                                ) : applicant.teamMembers ? (
-                                  <p className="mt-0.5 text-[10px] text-muted-foreground max-w-xs">
-                                    Members: {applicant.teamMembers}
-                                  </p>
-                                ) : null}
+
+                                {/* Quick Member Status Chips */}
+                                <div className="flex flex-wrap gap-1">
+                                  <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 border border-emerald-500/30 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-400">
+                                    <span className="size-1.5 rounded-full bg-emerald-400" />
+                                    {applicant.fullName.split(" ")[0]} (Leader)
+                                  </span>
+                                  {applicant.teammates &&
+                                    applicant.teammates.map((m, idx) => {
+                                      const isVer = m.status === "verified";
+                                      return (
+                                        <span
+                                          key={idx}
+                                          className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-semibold border ${
+                                            isVer
+                                              ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-400"
+                                              : "bg-amber-500/15 border-amber-500/30 text-amber-400"
+                                          }`}
+                                        >
+                                          <span
+                                            className={`size-1.5 rounded-full ${
+                                              isVer ? "bg-emerald-400" : "bg-amber-400 animate-pulse"
+                                            }`}
+                                          />
+                                          {m.name.split(" ")[0] || `Member ${idx + 2}`} {isVer ? "✓" : "⏳"}
+                                        </span>
+                                      );
+                                    })}
+                                </div>
+
+                                <button
+                                  type="button"
+                                  onClick={() => setInspectingApplicant(applicant)}
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-neon hover:underline cursor-pointer pt-0.5"
+                                >
+                                  <Users className="size-3" /> View Team Roster Details →
+                                </button>
                               </div>
                             ) : (
                               <div>
@@ -731,14 +767,26 @@ function ManageEventsPage() {
                       </p>
                     </div>
 
-                    <div className="mt-4 flex items-center justify-between pt-3 border-t border-border">
-                      <Link
-                        to="/opportunities/$slug"
-                        params={{ slug: reg.opportunitySlug }}
-                        className="text-xs font-semibold text-neon hover:underline"
-                      >
-                        View Event Page →
-                      </Link>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-2 pt-3 border-t border-border">
+                      <div className="flex items-center gap-2">
+                        <Link
+                          to="/opportunities/$slug"
+                          params={{ slug: reg.opportunitySlug }}
+                          className="text-xs font-semibold text-neon hover:underline"
+                        >
+                          View Event →
+                        </Link>
+                        {reg.teamType === "team" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setManagingTeamReg(reg)}
+                            className="rounded-full text-[11px] font-bold border-neon/50 text-neon hover:bg-neon hover:text-black py-0.5 px-2.5 h-7"
+                          >
+                            <Users className="size-3 mr-1" /> Manage Team Roster
+                          </Button>
+                        )}
+                      </div>
                       <span className="text-[11px] text-muted-foreground">
                         {new Date(reg.createdAt).toLocaleDateString()}
                       </span>
@@ -749,6 +797,127 @@ function ManageEventsPage() {
             )}
           </div>
         )}
+
+        {/* Organizer Team Roster Inspector Dialog */}
+        <Dialog open={Boolean(inspectingApplicant)} onOpenChange={(open) => !open && setInspectingApplicant(null)}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-border bg-[#070e0a] p-5 sm:p-7 text-foreground shadow-2xl">
+            <DialogHeader className="border-b border-border/70 pb-4">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neon">
+                <Users className="size-4" /> Organizer Roster Inspector
+              </div>
+              <DialogTitle className="mt-1 text-xl sm:text-2xl font-black text-foreground">
+                Team: {inspectingApplicant?.teamName || "Squad"}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Event: {inspectingApplicant?.opportunityTitle} · Registration ID: {inspectingApplicant?.id}
+              </DialogDescription>
+            </DialogHeader>
+
+            {inspectingApplicant && (
+              <div className="mt-4 space-y-4">
+                {/* Team Leader */}
+                <div className="rounded-2xl border border-emerald-500/40 bg-emerald-950/20 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-sm sm:text-base font-extrabold text-foreground">
+                          {inspectingApplicant.fullName}
+                        </h4>
+                        <span className="rounded-full bg-emerald-500/20 border border-emerald-500/40 px-2 py-0.5 text-[10px] font-extrabold text-emerald-300">
+                          Team Leader
+                        </span>
+                      </div>
+                      <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                        <p>📧 Email: <a href={`mailto:${inspectingApplicant.email}`} className="text-foreground hover:text-neon">{inspectingApplicant.email}</a></p>
+                        <p>📱 Phone: <a href={`https://wa.me/${inspectingApplicant.phone.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer" className="text-foreground hover:text-neon">{inspectingApplicant.phone}</a></p>
+                        <p>🏛️ College/Org: {inspectingApplicant.collegeOrCompany}</p>
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center gap-1 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-0.5 text-xs font-bold text-emerald-400">
+                      <CheckCircle2 className="size-3" /> Verified
+                    </span>
+                  </div>
+                </div>
+
+                {/* Teammates List */}
+                {inspectingApplicant.teammates && inspectingApplicant.teammates.length > 0 ? (
+                  <div className="space-y-3">
+                    <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                      Invited Teammates ({inspectingApplicant.teammates.length})
+                    </p>
+                    {inspectingApplicant.teammates.map((m, idx) => {
+                      const isVer = m.status === "verified";
+                      return (
+                        <div
+                          key={idx}
+                          className={`rounded-2xl border p-4 ${
+                            isVer
+                              ? "border-emerald-500/40 bg-emerald-950/20"
+                              : "border-amber-500/40 bg-amber-950/20"
+                          }`}
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h4 className="text-sm font-bold text-foreground">{m.name}</h4>
+                                <span className="rounded-full bg-surface-2 border border-border px-2 py-0.5 text-[10px] text-muted-foreground">
+                                  Member #{idx + 2}
+                                </span>
+                              </div>
+                              <div className="mt-2 space-y-1 text-xs text-muted-foreground">
+                                <p>📧 Email: <a href={`mailto:${m.email}`} className="text-foreground hover:text-neon">{m.email}</a></p>
+                                {m.phone && (
+                                  <p>📱 Phone: <a href={`https://wa.me/${m.phone.replace(/[^\d]/g, "")}`} target="_blank" rel="noreferrer" className="text-foreground hover:text-neon">{m.phone}</a></p>
+                                )}
+                                {m.collegeOrCompany && <p>🏛️ College: {m.collegeOrCompany}</p>}
+                                {m.department && <p>🎓 Department: {m.department} ({m.graduationYear || "Year"})</p>}
+                              </div>
+                            </div>
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-bold ${
+                                isVer
+                                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
+                                  : "border-amber-500/40 bg-amber-500/10 text-amber-400"
+                              }`}
+                            >
+                              {isVer ? "🟢 Confirmed & Joined" : "⏳ Confirmation Pending"}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">
+                    No additional teammates invited yet.
+                  </p>
+                )}
+
+                <div className="flex justify-end pt-3 border-t border-border">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setInspectingApplicant(null)}
+                    className="rounded-full text-xs"
+                  >
+                    Close Roster
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Builder Team Management Modal */}
+        <TeamManagementModal
+          registration={managingTeamReg}
+          open={Boolean(managingTeamReg)}
+          onOpenChange={(open) => !open && setManagingTeamReg(null)}
+          onUpdated={() => {
+            // Signal store update
+            setManagingTeamReg(null);
+          }}
+        />
       </main>
 
       <Footer />

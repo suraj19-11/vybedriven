@@ -1,7 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState, useMemo, type FormEvent } from "react";
 import { CheckCircle2, Sparkles, User, ArrowLeft, ExternalLink, PlusCircle, Calendar, Users, Edit3, Download, Ticket, ExternalLink as ExtLink } from "lucide-react";
-import { useHostedEvents, getUserRegistrations, getRegistrationsBySlug, exportRegistrationsToCSV } from "@/data/events-store";
+import {
+  useHostedEvents,
+  getUserRegistrations,
+  getRegistrationsBySlug,
+  exportRegistrationsToCSV,
+  confirmTeammateInvitation,
+  EVENT_CHANGE_SIGNAL,
+  type EventRegistration,
+} from "@/data/events-store";
+import { TeamManagementModal } from "@/components/TeamManagementModal";
 import { Navbar, Footer } from "@/components/SiteChrome";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -74,8 +83,24 @@ function ProfilePage() {
   const { user } = Route.useRouteContext();
   const { refreshProfile } = useAuth();
   const [activeTab, setActiveTab] = useState<"profile" | "hosted" | "registrations">("profile");
+  const [syncTick, setSyncTick] = useState(0);
+  const [managingTeamReg, setManagingTeamReg] = useState<EventRegistration | null>(null);
+
+  useEffect(() => {
+    const onSync = () => setSyncTick((t) => t + 1);
+    window.addEventListener(EVENT_CHANGE_SIGNAL, onSync);
+    window.addEventListener("storage", onSync);
+    return () => {
+      window.removeEventListener(EVENT_CHANGE_SIGNAL, onSync);
+      window.removeEventListener("storage", onSync);
+    };
+  }, []);
+
   const myHostedEvents = useHostedEvents(user.id, user.email);
-  const myRegistrations = useMemo(() => getUserRegistrations(user.id, user.email), [user]);
+  const myRegistrations = useMemo(
+    () => getUserRegistrations(user.id, user.email),
+    [user, syncTick]
+  );
   const [form, setForm] = useState(emptyProfile);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -372,40 +397,123 @@ function ProfilePage() {
               </div>
             ) : (
               <div className="grid gap-4 sm:grid-cols-2">
-                {myRegistrations.map((reg) => (
-                  <div
-                    key={reg.id}
-                    className="flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-neon/40"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between border-b border-border pb-3">
-                        <span className="font-mono text-xs font-bold text-neon">{reg.id}</span>
-                        <span className="rounded-full bg-neon/15 px-2.5 py-0.5 text-xs font-bold text-neon">
-                          {reg.status}
+                {myRegistrations.map((reg) => {
+                  const isLeader = Boolean(
+                    user &&
+                      ((user.id && reg.userId === user.id) ||
+                        (user.email && reg.email.toLowerCase() === user.email.toLowerCase()))
+                  );
+                  const myMemberRecord = user?.email
+                    ? reg.teammates?.find((t) => t.email.toLowerCase() === user.email!.toLowerCase())
+                    : null;
+                  const isConfirmed = myMemberRecord ? myMemberRecord.status === "verified" : isLeader;
+
+                  return (
+                    <div
+                      key={reg.id}
+                      className="flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-neon/40"
+                    >
+                      <div>
+                        <div className="flex items-center justify-between border-b border-border pb-3">
+                          <span className="font-mono text-xs font-bold text-neon">{reg.id}</span>
+                          <span className="rounded-full bg-neon/15 px-2.5 py-0.5 text-xs font-bold text-neon">
+                            {reg.status}
+                          </span>
+                        </div>
+
+                        <h4 className="mt-3 font-bold text-base text-foreground">
+                          {reg.opportunityTitle}
+                        </h4>
+
+                        <div className="mt-2 space-y-2">
+                          {reg.teamType === "team" ? (
+                            <div className="rounded-xl border border-border bg-surface/70 p-3">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="font-bold text-neon">
+                                  Team: {reg.teamName || "Squad"}
+                                </span>
+                                <span className="text-muted-foreground text-[11px]">
+                                  {1 + (reg.teammates?.length || 0)}/4 Members
+                                </span>
+                              </div>
+
+                              {isLeader ? (
+                                <div className="mt-2">
+                                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                                    <span className="size-1.5 rounded-full bg-emerald-400" />
+                                    You are the Team Leader
+                                  </span>
+                                  <Button
+                                    size="sm"
+                                    onClick={() => setManagingTeamReg(reg)}
+                                    className="mt-2 w-full rounded-full bg-gradient-brand text-black font-extrabold text-xs shadow-glow hover:brightness-105"
+                                  >
+                                    <Users className="size-3.5 mr-1" /> Manage Team Roster (Unstop Style)
+                                  </Button>
+                                </div>
+                              ) : (
+                                <div className="mt-2">
+                                  {isConfirmed ? (
+                                    <div className="flex items-center justify-between">
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                                        <CheckCircle2 className="size-3 text-emerald-400" /> Confirmed Member
+                                      </span>
+                                      <Button
+                                        size="sm"
+                                        variant="outline"
+                                        onClick={() => setManagingTeamReg(reg)}
+                                        className="rounded-full text-xs"
+                                      >
+                                        View Team Roster
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <div className="space-y-1.5">
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-400">
+                                        <span className="size-1.5 rounded-full bg-amber-400 animate-pulse" />
+                                        Invited by {reg.fullName} (Confirmation Pending)
+                                      </span>
+                                      <Button
+                                        size="sm"
+                                        onClick={() => {
+                                          if (user.email) {
+                                            confirmTeammateInvitation(reg.id, user.email);
+                                            toast.success(`Joined Team "${reg.teamName}"!`);
+                                            setSyncTick((t) => t + 1);
+                                          }
+                                        }}
+                                        className="w-full rounded-full bg-amber-400 text-black font-bold text-xs shadow-sm hover:brightness-105"
+                                      >
+                                        Accept &amp; Join Team 🚀
+                                      </Button>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <p className="text-xs text-muted-foreground">
+                              Solo Builder Entry · {reg.fullName}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-4 flex items-center justify-between pt-3 border-t border-border">
+                        <Link
+                          to="/opportunities/$slug"
+                          params={{ slug: reg.opportunitySlug }}
+                          className="text-xs font-semibold text-neon hover:underline"
+                        >
+                          View Event Page →
+                        </Link>
+                        <span className="text-[11px] text-muted-foreground">
+                          {new Date(reg.createdAt).toLocaleDateString()}
                         </span>
                       </div>
-                      <h4 className="mt-3 font-bold text-base text-foreground">
-                        {reg.opportunityTitle}
-                      </h4>
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Registered as {reg.fullName} ({reg.teamType === "team" ? `Team ${reg.teamName}` : "Solo"})
-                      </p>
                     </div>
-
-                    <div className="mt-4 flex items-center justify-between pt-3 border-t border-border">
-                      <Link
-                        to="/opportunities/$slug"
-                        params={{ slug: reg.opportunitySlug }}
-                        className="text-xs font-semibold text-neon hover:underline"
-                      >
-                        View Event Page →
-                      </Link>
-                      <span className="text-[11px] text-muted-foreground">
-                        {new Date(reg.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -540,6 +648,16 @@ function ProfilePage() {
           </div>
         </form>
         )}
+
+        <TeamManagementModal
+          registration={managingTeamReg}
+          open={Boolean(managingTeamReg)}
+          onOpenChange={(open) => !open && setManagingTeamReg(null)}
+          onUpdated={() => {
+            setManagingTeamReg(null);
+            setSyncTick((t) => t + 1);
+          }}
+        />
       </main>
       <Footer />
     </div>

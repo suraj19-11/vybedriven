@@ -1,5 +1,5 @@
 import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   Calendar,
   CheckCircle2,
@@ -39,7 +39,8 @@ import { Button } from "@/components/ui/button";
 import { getOpportunity, type Opportunity } from "@/data/opportunities";
 import { useAuth } from "@/lib/auth";
 import { EventRegistrationModal } from "@/components/EventRegistrationModal";
-import { isUserRegistered, getRegistrationCount, useEventRegistrations, isEventOrganizer } from "@/data/events-store";
+import { TeamManagementModal } from "@/components/TeamManagementModal";
+import { isUserRegistered, getRegistrationCount, useEventRegistrations, isEventOrganizer, type EventRegistration } from "@/data/events-store";
 
 type OpportunitySearch = { register?: string };
 
@@ -512,6 +513,7 @@ function OpportunityDetails() {
   const { user, loading } = useAuth();
   const [regModalOpen, setRegModalOpen] = useState(false);
   const [exploreGateOpen, setExploreGateOpen] = useState(false);
+  const [teamModalOpen, setTeamModalOpen] = useState(false);
 
   // Mandatory Auth Gate: if visitor is not logged in, prompt them to sign in or create account
   useEffect(() => {
@@ -539,6 +541,20 @@ function OpportunityDetails() {
   const userIdentifier = user?.email || user?.id;
   const isRegistered = isUserRegistered(item.slug, userIdentifier);
   const isHost = isEventOrganizer(item, user);
+
+  const userRegRecord = useMemo(() => {
+    if (!user) return null;
+    return (
+      registrations.find(
+        (r) =>
+          (user.id && r.userId === user.id) ||
+          (user.email && r.email.toLowerCase() === user.email.toLowerCase()) ||
+          (user.email &&
+            r.teammates &&
+            r.teammates.some((t) => t.email.toLowerCase() === user.email!.toLowerCase()))
+      ) || null
+    );
+  }, [registrations, user]);
 
   const facts = [
     { icon: Calendar, label: "Event dates", value: item.date },
@@ -1019,6 +1035,17 @@ function OpportunityDetails() {
                       <Ticket className="size-3.5 mr-1.5" />
                       View Entry Pass / Ticket
                     </Button>
+
+                    {userRegRecord?.teamType === "team" && (
+                      <Button
+                        size="sm"
+                        onClick={() => setTeamModalOpen(true)}
+                        className="mt-2 w-full rounded-full bg-gradient-brand text-black font-extrabold text-xs shadow-glow hover:brightness-105"
+                      >
+                        <Users className="size-3.5 mr-1.5" />
+                        Manage Team Roster ({1 + (userRegRecord.teammates?.length || 0)}/4)
+                      </Button>
+                    )}
                   </div>
                 ) : (
                   <div className="mt-5 space-y-3">
@@ -1112,6 +1139,13 @@ function OpportunityDetails() {
         opportunity={item}
         open={regModalOpen}
         onOpenChange={setRegModalOpen}
+      />
+
+      {/* Team Management Modal */}
+      <TeamManagementModal
+        registration={userRegRecord}
+        open={teamModalOpen}
+        onOpenChange={setTeamModalOpen}
       />
 
       {/* Mandatory Auth Gate for Unauthenticated Visitors */}

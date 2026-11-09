@@ -308,7 +308,7 @@ export function EventRegistrationModal({
       toast.error("A team can have a maximum of 4 members.");
       return;
     }
-    setTeammates([...teammates, { name: "", email: "", phone: "" }]);
+    setTeammates([...teammates, { name: "", email: "", phone: "", status: "pending", role: "member" }]);
   };
 
   const handleUpdateTeammate = (index: number, field: keyof TeammateDetail, value: string) => {
@@ -365,7 +365,10 @@ export function EventRegistrationModal({
         teamName: teamMode === "create_team" ? teamName.trim() : undefined,
         teamSize: teamMode === "create_team" ? `${1 + teammates.length} members` : "Solo",
         teamMembers: teamMode === "create_team" ? teamSummary : undefined,
-        teammates: teamMode === "create_team" ? teammates : [],
+        teammates:
+          teamMode === "create_team"
+            ? teammates.map((t) => ({ ...t, status: t.status || "pending", role: "member" as const }))
+            : [],
         lookingForTeammates,
         termsAccepted,
         experienceLevel: "Intermediate",
@@ -516,55 +519,55 @@ export function EventRegistrationModal({
       ctx.fill();
       ctx.stroke();
 
-      // 7. Left Section: Event & Attendee Info
+      // 7. Left Section: Event & Attendee Info (Constrained to x <= 760, stub starts at x = 800)
       // Event Title
       ctx.fillStyle = "#ffffff";
-      ctx.font = "900 34px sans-serif";
+      ctx.font = "900 32px sans-serif";
       const displayTitle =
-        opportunity.title.length > 32
-          ? opportunity.title.slice(0, 30) + "..."
+        opportunity.title.length > 30
+          ? opportunity.title.slice(0, 28) + "..."
           : opportunity.title;
-      ctx.fillText(displayTitle, 75, 175);
+      ctx.fillText(displayTitle, 75, 165, 680);
 
-      // Event Meta: Organizer & Location & Date
-      ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
-      ctx.font = "16px sans-serif";
-      ctx.fillText(
-        `Hosted by ${opportunity.organizer}  ·  ${opportunity.format} (${opportunity.location})`,
-        75,
-        205
-      );
+      // Event Meta Line 1: Organizer (Clean & Clamped to left column)
+      ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+      ctx.font = "14px sans-serif";
+      const orgText = `Organized by: ${opportunity.organizer}`;
+      ctx.fillText(orgText, 75, 193, 680);
+
+      // Event Meta Line 2: Format, Location & Event Date
       ctx.fillStyle = "#4ade80";
-      ctx.font = "bold 15px sans-serif";
-      ctx.fillText(`Event Date: ${opportunity.date}`, 75, 230);
+      ctx.font = "bold 13px sans-serif";
+      const locText = `${opportunity.format} · ${opportunity.location}  |  ${opportunity.date}`;
+      ctx.fillText(locText, 75, 218, 680);
 
       // Horizontal subtle line
       ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
       ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(75, 255);
-      ctx.lineTo(760, 255);
+      ctx.moveTo(75, 245);
+      ctx.lineTo(760, 245);
       ctx.stroke();
 
       // Attendee Detail Grid
       const drawField = (label: string, val: string, x: number, y: number) => {
         ctx.fillStyle = "#9ca3af";
-        ctx.font = "bold 12px sans-serif";
+        ctx.font = "bold 11px sans-serif";
         ctx.fillText(label.toUpperCase(), x, y);
         ctx.fillStyle = "#ffffff";
-        ctx.font = "bold 19px sans-serif";
-        const trimmed = val.length > 28 ? val.slice(0, 26) + "..." : val;
-        ctx.fillText(trimmed, x, y + 26);
+        ctx.font = "bold 18px sans-serif";
+        const trimmed = val.length > 30 ? val.slice(0, 28) + "..." : val;
+        ctx.fillText(trimmed, x, y + 24, 320);
       };
 
-      drawField("Primary Attendee", confirmedReg.fullName || "Builder", 75, 290);
-      drawField("Contact Email", confirmedReg.email || "-", 430, 290);
+      drawField("Primary Attendee", confirmedReg.fullName || "Builder", 75, 280);
+      drawField("Contact Email", confirmedReg.email || "-", 430, 280);
 
       drawField(
         "College / Organization",
         confirmedReg.collegeOrCompany || "-",
         75,
-        370
+        360
       );
       drawField(
         "Participation Mode",
@@ -572,20 +575,20 @@ export function EventRegistrationModal({
           ? `Team (${confirmedReg.teamName || "Squad"})`
           : "Solo Builder",
         430,
-        370
+        360
       );
 
-      drawField("Phone / WhatsApp", confirmedReg.phone || "-", 75, 450);
-      drawField("Category", confirmedReg.userType || "College Student", 430, 450);
+      drawField("Phone / WhatsApp", confirmedReg.phone || "-", 75, 440);
+      drawField("Category", confirmedReg.userType || "College Student", 430, 440);
 
       // Verified Status Ribbon
       ctx.fillStyle = "rgba(34, 197, 94, 0.15)";
-      ctx.fillRect(75, 515, 240, 36);
+      ctx.fillRect(75, 510, 240, 36);
       ctx.strokeStyle = "#22c55e";
-      ctx.strokeRect(75, 515, 240, 36);
+      ctx.strokeRect(75, 510, 240, 36);
       ctx.fillStyle = "#22c55e";
       ctx.font = "bold 13px sans-serif";
-      ctx.fillText("● VERIFIED & CONFIRMED", 95, 538);
+      ctx.fillText("● VERIFIED & CONFIRMED", 95, 533);
 
       // 8. Right Section: Pass Stub & Barcode
       ctx.fillStyle = "#9ca3af";
@@ -1295,13 +1298,13 @@ Platform Support: vybedriven@gmail.com
                       </button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <input
                         type="text"
                         required
                         value={tm.name}
                         onChange={(e) => handleUpdateTeammate(idx, "name", e.target.value)}
-                        placeholder="Member name *"
+                        placeholder="Member full name *"
                         className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
                       />
                       <input
@@ -1309,14 +1312,35 @@ Platform Support: vybedriven@gmail.com
                         required
                         value={tm.email}
                         onChange={(e) => handleUpdateTeammate(idx, "email", e.target.value)}
-                        placeholder="Member email *"
+                        placeholder="Member email address *"
                         className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
                       />
                       <input
                         type="tel"
                         value={tm.phone || ""}
                         onChange={(e) => handleUpdateTeammate(idx, "phone", e.target.value)}
-                        placeholder="Mobile (optional)"
+                        placeholder="10-digit mobile number"
+                        className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
+                      />
+                      <input
+                        type="text"
+                        value={tm.collegeOrCompany || ""}
+                        onChange={(e) => handleUpdateTeammate(idx, "collegeOrCompany", e.target.value)}
+                        placeholder="College / Company"
+                        className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
+                      />
+                      <input
+                        type="text"
+                        value={tm.department || ""}
+                        onChange={(e) => handleUpdateTeammate(idx, "department", e.target.value)}
+                        placeholder="Department / Branch (e.g. CS, IT)"
+                        className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
+                      />
+                      <input
+                        type="text"
+                        value={tm.graduationYear || ""}
+                        onChange={(e) => handleUpdateTeammate(idx, "graduationYear", e.target.value)}
+                        placeholder="Graduation Year (e.g. 2026)"
                         className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
                       />
                     </div>
