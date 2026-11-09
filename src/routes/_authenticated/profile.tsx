@@ -460,11 +460,10 @@ function ProfilePage() {
                                       </span>
                                       <Button
                                         size="sm"
-                                        variant="outline"
                                         onClick={() => setManagingTeamReg(reg)}
-                                        className="rounded-full text-xs"
+                                        className="rounded-full bg-gradient-brand text-black font-extrabold text-xs shadow-glow hover:brightness-105"
                                       >
-                                        View Team Roster
+                                        <Users className="size-3.5 mr-1" /> Manage / Add Members
                                       </Button>
                                     </div>
                                   ) : (

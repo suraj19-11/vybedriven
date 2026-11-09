@@ -157,3 +157,4 @@ export function TeamInviteBanner() {
     </div>
   );
 }
+

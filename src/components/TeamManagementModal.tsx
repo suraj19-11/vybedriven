@@ -31,6 +31,7 @@ import {
   updateTeamRoster,
   confirmTeammateInvitation,
   findOpportunity,
+  isPlatformAdmin,
   type EventRegistration,
   type TeammateDetail,
 } from "@/data/events-store";
@@ -96,6 +97,18 @@ export function TeamManagementModal({
     opportunity &&
       (opportunity.status === "Event full" || opportunity.status === "Sold out")
   );
+
+  const isTeammate = Boolean(
+    user?.email &&
+      registration.teammates?.some(
+        (t) => t.email && t.email.toLowerCase() === user.email!.toLowerCase()
+      )
+  );
+
+  const isAdmin = isPlatformAdmin(user);
+
+  // Anyone in the squad (Leader, Members) or Platform Admin can manage & invite teammates!
+  const canManageTeam = !isEventClosed && (isLeader || isTeammate || isAdmin);
 
   const totalMembers = 1 + teammates.length;
   const maxMembers = 4;
@@ -190,8 +203,8 @@ export function TeamManagementModal({
 
   // Save changes to store and Supabase
   const handleSaveTeam = () => {
-    if (!isLeader) {
-      toast.error("Only the team leader can modify team details.");
+    if (!canManageTeam) {
+      toast.error("Only team members or administrators can modify team details.");
       return;
     }
     if (isEventClosed) {
@@ -264,7 +277,7 @@ export function TeamManagementModal({
               <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground block">
                 Team Name
               </span>
-              {editingTeamName && isLeader && !isEventClosed ? (
+              {editingTeamName && canManageTeam ? (
                 <div className="mt-1 flex items-center gap-2">
                   <input
                     type="text"
@@ -287,7 +300,7 @@ export function TeamManagementModal({
                   <h3 className="text-xl sm:text-2xl font-extrabold text-foreground">
                     {teamName}
                   </h3>
-                  {isLeader && !isEventClosed && (
+                  {canManageTeam && (
                     <button
                       type="button"
                       onClick={() => setEditingTeamName(true)}
@@ -310,7 +323,7 @@ export function TeamManagementModal({
                 </span>
               </div>
 
-              {isLeader && !isEventClosed && (
+              {canManageTeam && (
                 <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-muted-foreground select-none">
                   <span>Looking for teammates:</span>
                   <input
@@ -328,7 +341,7 @@ export function TeamManagementModal({
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
               <span>TEAM MEMBERS &amp; INVITATIONS</span>
-              {remainingSlots > 0 && isLeader && !isEventClosed && (
+              {remainingSlots > 0 && canManageTeam && (
                 <span className="text-neon">You can add {remainingSlots} more member{remainingSlots > 1 ? "s" : ""}</span>
               )}
             </div>
@@ -441,7 +454,7 @@ export function TeamManagementModal({
                       )}
 
                       {/* Action buttons */}
-                      {isLeader && !isEventClosed && (
+                      {canManageTeam && (
                         <div className="flex items-center gap-1">
                           {!isVerified && (
                             <>
@@ -480,7 +493,7 @@ export function TeamManagementModal({
             })}
 
             {/* Add Teammate Form or Button */}
-            {isLeader && !isEventClosed && remainingSlots > 0 && (
+            {canManageTeam && remainingSlots > 0 && (
               <>
                 {showAddForm ? (
                   <form
@@ -642,7 +655,7 @@ export function TeamManagementModal({
               Close
             </Button>
 
-            {isLeader && !isEventClosed && (
+            {canManageTeam && (
               <Button
                 type="button"
                 disabled={saving}
@@ -658,3 +671,4 @@ export function TeamManagementModal({
     </Dialog>
   );
 }
+

@@ -538,12 +538,16 @@ export function updateTeamRoster(
   // Authorization check
   const uId = user?.id?.trim();
   const uEmail = user?.email?.trim().toLowerCase();
-  const isLeader =
+  const isAuthorized =
     (uId && current.userId && current.userId === uId) ||
-    (uEmail && current.email.toLowerCase() === uEmail);
+    (uEmail && current.email.toLowerCase() === uEmail) ||
+    isPlatformAdmin(user) ||
+    (uEmail &&
+      current.teammates &&
+      current.teammates.some((t) => t.email && t.email.toLowerCase() === uEmail));
 
-  if (!isLeader) {
-    throw new Error("Unauthorized: Only the team leader can modify team roster.");
+  if (!isAuthorized) {
+    throw new Error("Unauthorized: Only team members or administrators can modify the team roster.");
   }
 
   // Check if event is still open
