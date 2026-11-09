@@ -1820,7 +1820,7 @@ Platform Support: vybedriven@gmail.com
 
                     <div className="flex items-center justify-between text-muted-foreground">
                       <span>2. 36-Hour Offline Hackathon — Grand Finale</span>
-                      <span className="text-[11px] font-mono text-foreground font-semibold">Jan 16–17, 2027</span>
+                      <span className="text-[11px] font-mono text-foreground font-semibold">To be announced (TBA)</span>
                     </div>
                   </div>
                 </div>

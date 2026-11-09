@@ -282,12 +282,9 @@ export function IdeaSubmissionModal({
 
           {/* 4. PPT Presentation Link */}
           <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                Presentation / PPT Link (Google Drive / Canva / Slides) <span className="text-neon">*</span>
-              </label>
-              <span className="text-[10px] text-neon font-bold">100% Free Cloud Link</span>
-            </div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1.5">
+              Presentation / PPT Link (Google Drive / Canva / Slides) <span className="text-neon">*</span>
+            </label>
             <div className="relative">
               <LinkIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <input
@@ -300,10 +297,14 @@ export function IdeaSubmissionModal({
                 className="w-full rounded-xl border border-border bg-surface pl-10 pr-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon transition disabled:opacity-50 font-mono text-xs"
               />
             </div>
-            <p className="mt-1.5 text-[11px] text-muted-foreground flex items-center gap-1.5">
-              <span className="text-neon font-bold">Important:</span> Ensure Google Drive / Canva sharing access is set to 
-              <span className="font-semibold text-foreground"> "Anyone with the link can view"</span> so judges can evaluate.
-            </p>
+            <div className="mt-2 rounded-xl border border-border bg-surface/80 p-2.5 text-[11px] text-muted-foreground leading-relaxed">
+              <div className="flex items-start gap-2">
+                <span className="text-neon font-bold shrink-0">📌 Note:</span>
+                <span>
+                  Upload your slide deck to <strong>Google Drive</strong>, <strong>Canva</strong>, or <strong>Microsoft OneDrive</strong> and paste the share link here. Ensure file sharing is set to <strong className="text-foreground">&quot;Anyone with the link can view&quot;</strong> so judges can review your deck.
+                </span>
+              </div>
+            </div>
           </div>
 
           {/* Official PPT Checklist Box */}
@@ -378,3 +379,4 @@ export function IdeaSubmissionModal({
     </Dialog>
   );
 }
+

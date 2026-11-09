@@ -542,8 +542,16 @@ export function mergeRemoteRegistrations(remoteRows: any[]): void {
   const merged = Array.from(map.values()).sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
-  localStorage.setItem(STORAGE_REGISTRATIONS, JSON.stringify(merged));
-  notifyStoreChange();
+
+  const prevJson = typeof window !== "undefined" ? localStorage.getItem(STORAGE_REGISTRATIONS) : null;
+  const nextJson = JSON.stringify(merged);
+
+  if (prevJson !== nextJson) {
+    if (typeof window !== "undefined") {
+      localStorage.setItem(STORAGE_REGISTRATIONS, nextJson);
+      notifyStoreChange();
+    }
+  }
 }
 
 // Get all registrations for an opportunity (organizer view)
@@ -1205,7 +1213,22 @@ export function useEventRegistrations(slug: string) {
     let active = true;
 
     const update = () => {
-      setList(getRegistrationsBySlug(slug));
+      const next = getRegistrationsBySlug(slug);
+      setList((prev) => {
+        if (
+          prev.length === next.length &&
+          prev.every(
+            (p, i) =>
+              p.id === next[i]?.id &&
+              p.updatedAt === next[i]?.updatedAt &&
+              (p.teammates?.length || 0) === (next[i]?.teammates?.length || 0) &&
+              p.submission?.pptUrl === next[i]?.submission?.pptUrl
+          )
+        ) {
+          return prev;
+        }
+        return next;
+      });
     };
     update();
     window.addEventListener(EVENT_CHANGE_SIGNAL, update);
@@ -1221,21 +1244,7 @@ export function useEventRegistrations(slug: string) {
             .then(({ data, error }) => {
               if (!active || error || !data || !Array.isArray(data)) return;
               mergeRemoteRegistrations(data);
-              const next = getRegistrationsBySlug(slug);
-              setList((prev) => {
-                if (
-                  prev.length === next.length &&
-                  prev.every(
-                    (p, i) =>
-                      p.id === next[i]?.id &&
-                      p.updatedAt === next[i]?.updatedAt &&
-                      (p.teammates?.length || 0) === (next[i]?.teammates?.length || 0)
-                  )
-                ) {
-                  return prev;
-                }
-                return next;
-              });
+              update();
             })
             .catch(() => {});
         })
@@ -1243,7 +1252,7 @@ export function useEventRegistrations(slug: string) {
     };
 
     fetchCloud();
-    const interval = setInterval(fetchCloud, 4000);
+    const interval = setInterval(fetchCloud, 12000);
     window.addEventListener("focus", fetchCloud);
 
     return () => {
