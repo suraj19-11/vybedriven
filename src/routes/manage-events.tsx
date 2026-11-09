@@ -35,6 +35,8 @@ import {
   deleteHostedOpportunity,
   getUserRegistrations,
   isEventOrganizer,
+  mergeRemoteRegistrations,
+  EVENT_CHANGE_SIGNAL,
   type EventRegistration,
   type HostedEvent,
 } from "@/data/events-store";
@@ -87,6 +89,37 @@ function ManageEventsPage() {
   const [selectedEventSlug, setSelectedEventSlug] = useState<string>(search.slug || "");
   const [applicantQuery, setApplicantQuery] = useState("");
   const [applicantStatusFilter, setApplicantStatusFilter] = useState<string>("All");
+  const [syncTick, setSyncTick] = useState(0);
+
+  // Sync Supabase registrations on mount and listen to store changes
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const onSync = () => setSyncTick((t) => t + 1);
+    window.addEventListener(EVENT_CHANGE_SIGNAL, onSync);
+    window.addEventListener("storage", onSync);
+
+    let active = true;
+    import("@/integrations/supabase/client")
+      .then(({ supabase }) => {
+        supabase
+          .from("registrations" as any)
+          .select("*")
+          .then(({ data, error }) => {
+            if (!active || error || !data || !Array.isArray(data)) return;
+            mergeRemoteRegistrations(data);
+            setSyncTick((t) => t + 1);
+          })
+          .catch(() => {});
+      })
+      .catch(() => {});
+
+    return () => {
+      active = false;
+      window.removeEventListener(EVENT_CHANGE_SIGNAL, onSync);
+      window.removeEventListener("storage", onSync);
+    };
+  }, []);
 
   // Strictly get only the events hosted by this authenticated user
   const myEvents = useHostedEvents(user?.id, user?.email);
@@ -105,17 +138,17 @@ function ManageEventsPage() {
   const eventRegistrations = useMemo(() => {
     if (!currentEvent || !isEventOrganizer(currentEvent, user)) return [];
     return getRegistrationsBySlug(currentEvent.slug);
-  }, [currentEvent, user]);
+  }, [currentEvent, user, syncTick]);
 
   // Registrations user personally made as a builder
   const myRegistrations = useMemo(() => {
     return getUserRegistrations(user?.id, user?.email);
-  }, [user]);
+  }, [user, syncTick]);
 
   // Overall stats strictly for this organizer
   const totalRegistrations = useMemo(() => {
     return myEvents.reduce((acc, e) => acc + getRegistrationsBySlug(e.slug).length, 0);
-  }, [myEvents]);
+  }, [myEvents, syncTick]);
 
   // Filtered applicants
   const filteredApplicants = useMemo(() => {

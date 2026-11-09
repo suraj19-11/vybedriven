@@ -223,8 +223,12 @@ function ProfilePage() {
                     fill="transparent"
                   />
                 </svg>
-                <div className="absolute inset-1.5 flex items-center justify-center rounded-full bg-surface text-3xl sm:text-4xl shadow-inner">
-                  {form.avatar_url || "👨‍💻"}
+                <div className="absolute inset-1.5 flex items-center justify-center rounded-full bg-surface text-3xl sm:text-4xl shadow-inner overflow-hidden">
+                  {form.avatar_url?.startsWith("http") ? (
+                    <img src={form.avatar_url} alt="Avatar" className="size-full rounded-full object-cover" />
+                  ) : (
+                    form.avatar_url || "👨‍💻"
+                  )}
                 </div>
                 <span className="absolute -bottom-2 rounded-full border border-neon/40 bg-[#060e08] px-2 py-0.5 text-[10px] font-black tracking-wide text-neon shadow-glow">
                   {completionPercent}%
@@ -421,8 +425,12 @@ function ProfilePage() {
               </div>
               <div className="flex items-center gap-2 self-start sm:self-auto">
                 <span className="text-xs text-muted-foreground">Selected:</span>
-                <span className="grid size-9 place-items-center rounded-xl border border-neon bg-neon/15 text-xl shadow-glow-soft">
-                  {form.avatar_url || "👨‍💻"}
+                <span className="grid size-9 place-items-center rounded-xl border border-neon bg-neon/15 text-xl shadow-glow-soft overflow-hidden">
+                  {form.avatar_url?.startsWith("http") ? (
+                    <img src={form.avatar_url} alt="Avatar" className="size-full rounded-full object-cover" />
+                  ) : (
+                    form.avatar_url || "👨‍💻"
+                  )}
                 </span>
               </div>
             </div>

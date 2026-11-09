@@ -68,6 +68,34 @@ function getProfileCompletion(profile: Profile | null): number {
   return Math.min(100, Math.max(25, score));
 }
 
+function AvatarBadge({
+  avatar,
+  className = "size-full",
+  textClassName = "text-base",
+}: {
+  avatar: string;
+  className?: string;
+  textClassName?: string;
+}) {
+  const isUrl =
+    avatar.startsWith("http://") ||
+    avatar.startsWith("https://") ||
+    avatar.startsWith("/");
+  if (isUrl) {
+    return (
+      <img
+        src={avatar}
+        alt="Avatar"
+        className={`${className} rounded-full object-cover`}
+        onError={(e) => {
+          (e.currentTarget as HTMLElement).style.display = "none";
+        }}
+      />
+    );
+  }
+  return <span className={textClassName}>{avatar || "👨‍💻"}</span>;
+}
+
 function ProfileMenu() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -114,8 +142,8 @@ function ProfileMenu() {
         aria-label="Open builder profile menu"
         className="group flex items-center gap-2 rounded-full border border-border/80 bg-surface/80 py-1 pl-1.5 pr-3 transition-all hover:border-neon hover:bg-surface hover:shadow-glow-soft"
       >
-        <span className="grid size-8 place-items-center rounded-full bg-neon/15 text-lg shadow-inner">
-          {avatar}
+        <span className="grid size-8 place-items-center rounded-full bg-neon/15 text-lg shadow-inner overflow-hidden">
+          <AvatarBadge avatar={avatar} className="size-full" textClassName="text-base" />
         </span>
         <span className="text-xs font-bold text-foreground hidden sm:inline max-w-[110px] truncate">
           {firstName}
@@ -154,8 +182,8 @@ function ProfileMenu() {
                   fill="transparent"
                 />
               </svg>
-              <div className="absolute inset-1 flex items-center justify-center rounded-full bg-surface text-2xl shadow-inner">
-                {avatar}
+              <div className="absolute inset-1 flex items-center justify-center rounded-full bg-surface text-2xl shadow-inner overflow-hidden">
+                <AvatarBadge avatar={avatar} className="size-full" textClassName="text-2xl" />
               </div>
               <span className="absolute -bottom-1.5 rounded-full border border-neon/50 bg-[#030804] px-1.5 py-0.2 text-[9px] font-black text-neon shadow-glow">
                 {completion}%
@@ -227,7 +255,7 @@ function ProfileMenu() {
               className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-foreground/90 font-medium transition hover:bg-surface hover:text-neon"
             >
               <PlusCircle className="size-4 text-cyan-400" />
-              <span>Host a Hackathon</span>
+              <span>Host a Hackathon / Event</span>
             </Link>
 
             <a
@@ -446,8 +474,8 @@ export function Navbar() {
           {user && (
             <div className="mb-3 flex items-center justify-between rounded-xl border border-border bg-surface/80 p-3">
               <div className="flex items-center gap-3">
-                <span className="grid size-11 place-items-center rounded-full bg-neon/15 text-2xl shadow-inner">
-                  {avatar}
+                <span className="grid size-11 place-items-center rounded-full bg-neon/15 text-2xl shadow-inner overflow-hidden">
+                  <AvatarBadge avatar={avatar} className="size-full" textClassName="text-2xl" />
                 </span>
                 <div>
                   <p className="text-sm font-bold text-foreground truncate max-w-[160px]">{displayName}</p>

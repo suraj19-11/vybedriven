@@ -294,7 +294,32 @@ function HostEventPage() {
           contacts,
         });
 
-        toast.success("🚀 Event successfully published! Your opportunity is now live.");
+        // Prepare email notification to Vybe Driven
+        try {
+          const mailSubject = encodeURIComponent(`[New Hackathon / Event Request] ${title.trim()}`);
+          const mailBody = encodeURIComponent(
+            `Hello Vybe Driven Team,\n\nA new event proposal has been submitted:\n\n` +
+            `• Event Title: ${title.trim()}\n` +
+            `• Category / Type: ${type}\n` +
+            `• Organizer: ${organizer.trim() || profile?.display_name || user.email}\n` +
+            `• Email: ${user.email || organizerEmail.trim()}\n` +
+            `• Phone: ${organizerPhone.trim() || "Not provided"}\n` +
+            `• Format: ${format}\n` +
+            `• Location: ${locationValue.trim()}\n` +
+            `• Date: ${date.trim()}\n` +
+            `• Registration Deadline: ${registrationDeadline.trim()}\n` +
+            `• Prize Pool: ${prize.trim() || "N/A"}\n` +
+            `• Description: ${description.trim()}\n\n` +
+            `Live URL: https://www.vybedriven.in/opportunities/${newEvent.slug}\n\n` +
+            `Submitted from Organizer Studio on Vybe Driven.`
+          );
+          const mailLink = `mailto:vybedriven@gmail.com?subject=${mailSubject}&body=${mailBody}`;
+          window.open(mailLink, "_blank");
+        } catch {
+          // ignore popup blocker if restricted
+        }
+
+        toast.success("🚀 Event successfully published! Details forwarded to Vybe Driven.");
         await navigate({ to: "/opportunities/$slug", params: { slug: newEvent.slug } });
       }
     } catch (err: any) {
@@ -324,7 +349,7 @@ function HostEventPage() {
               <Sparkles className="size-4" /> Organizer Studio · Signed in as {profile?.display_name || user.email}
             </div>
             <h1 className="mt-2 text-3xl sm:text-4xl font-black text-foreground">
-              {isEditing ? "Edit Your Event" : "Host an Event"}
+              {isEditing ? "Edit Your Event" : "Host a Hackathon / Event"}
             </h1>
             <p className="mt-1 text-sm sm:text-base text-muted-foreground">
               {isEditing

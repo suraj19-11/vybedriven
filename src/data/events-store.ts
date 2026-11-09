@@ -67,7 +67,7 @@ export type EventRegistration = {
 
 const STORAGE_HOSTED_EVENTS = "hd_hosted_events";
 const STORAGE_REGISTRATIONS = "hd_event_registrations";
-const EVENT_CHANGE_SIGNAL = "hd_events_store_updated";
+export const EVENT_CHANGE_SIGNAL = "hd_events_store_updated";
 
 function notifyStoreChange() {
   if (typeof window === "undefined") return;
@@ -83,7 +83,15 @@ export function getStoredHostedEvents(): HostedEvent[] {
   try {
     const raw = localStorage.getItem(STORAGE_HOSTED_EVENTS);
     if (!raw) return [];
-    return JSON.parse(raw) as HostedEvent[];
+    const parsed = JSON.parse(raw) as HostedEvent[];
+    // Filter out test events
+    const cleaned = parsed.filter(
+      (e) => !e.slug.includes("satyam") && !e.title?.toLowerCase().includes("satyam")
+    );
+    if (cleaned.length !== parsed.length) {
+      localStorage.setItem(STORAGE_HOSTED_EVENTS, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch (error) {
     console.error("Failed to parse hosted events:", error);
     return [];
@@ -223,6 +231,7 @@ export const ADMIN_EMAILS = [
   "vybedriven@gmail.com",
   "admin@vybedriven.in",
   "hello@goabuilds.com",
+  "pandeysatyam2030@gmail.com",
   ...envAdminEmails,
 ];
 

@@ -393,7 +393,290 @@ export function EventRegistrationModal({
 
   const downloadPassSummary = () => {
     if (!confirmedReg) return;
-    const textContent = `========================================================
+
+    try {
+      // Create high-res canvas (1200 x 675, 16:9 ratio)
+      const canvas = document.createElement("canvas");
+      canvas.width = 1200;
+      canvas.height = 675;
+      const ctx = canvas.getContext("2d");
+
+      if (!ctx) {
+        throw new Error("Canvas context unavailable");
+      }
+
+      // 1. Dark futuristic gradient background
+      const bgGrad = ctx.createLinearGradient(0, 0, 1200, 675);
+      bgGrad.addColorStop(0, "#030804");
+      bgGrad.addColorStop(0.5, "#08130a");
+      bgGrad.addColorStop(1, "#030a05");
+      ctx.fillStyle = bgGrad;
+      ctx.fillRect(0, 0, 1200, 675);
+
+      // 2. Ambient neon green corner glows
+      const glowGrad = ctx.createRadialGradient(100, 100, 10, 100, 100, 350);
+      glowGrad.addColorStop(0, "rgba(34, 197, 94, 0.18)");
+      glowGrad.addColorStop(1, "transparent");
+      ctx.fillStyle = glowGrad;
+      ctx.fillRect(0, 0, 1200, 675);
+
+      const stubGlow = ctx.createRadialGradient(1000, 350, 10, 1000, 350, 300);
+      stubGlow.addColorStop(0, "rgba(34, 197, 94, 0.12)");
+      stubGlow.addColorStop(1, "transparent");
+      ctx.fillStyle = stubGlow;
+      ctx.fillRect(0, 0, 1200, 675);
+
+      // 3. Cyber grid lines
+      ctx.strokeStyle = "rgba(34, 197, 94, 0.05)";
+      ctx.lineWidth = 1;
+      for (let x = 40; x < 1160; x += 40) {
+        ctx.beginPath();
+        ctx.moveTo(x, 40);
+        ctx.lineTo(x, 635);
+        ctx.stroke();
+      }
+      for (let y = 40; y < 635; y += 40) {
+        ctx.beginPath();
+        ctx.moveTo(40, y);
+        ctx.lineTo(1160, y);
+        ctx.stroke();
+      }
+
+      // 4. Main Card Border with Neon Glow
+      ctx.strokeStyle = "#22c55e";
+      ctx.lineWidth = 2.5;
+      ctx.strokeRect(40, 40, 1120, 595);
+
+      // Corner tech brackets
+      ctx.fillStyle = "#22c55e";
+      const bracketSize = 24;
+      const bThickness = 5;
+      // Top-Left
+      ctx.fillRect(38, 38, bracketSize, bThickness);
+      ctx.fillRect(38, 38, bThickness, bracketSize);
+      // Top-Right
+      ctx.fillRect(1162 - bracketSize, 38, bracketSize, bThickness);
+      ctx.fillRect(1162 - bThickness, 38, bThickness, bracketSize);
+      // Bottom-Left
+      ctx.fillRect(38, 637 - bThickness, bracketSize, bThickness);
+      ctx.fillRect(38, 637 - bracketSize, bThickness, bracketSize);
+      // Bottom-Right
+      ctx.fillRect(1162 - bracketSize, 637 - bThickness, bracketSize, bThickness);
+      ctx.fillRect(1162 - bThickness, 637 - bracketSize, bThickness, bracketSize);
+
+      // 5. Header Bar
+      ctx.fillStyle = "rgba(0, 0, 0, 0.5)";
+      ctx.fillRect(42, 42, 1116, 75);
+      ctx.strokeStyle = "rgba(34, 197, 94, 0.25)";
+      ctx.beginPath();
+      ctx.moveTo(42, 117);
+      ctx.lineTo(1158, 117);
+      ctx.stroke();
+
+      // Logo: VYBE DRIVEN
+      ctx.fillStyle = "#22c55e";
+      ctx.font = "bold 26px sans-serif";
+      ctx.fillText("VYBE", 75, 88);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillText("DRIVEN", 152, 88);
+
+      // Live green dot
+      ctx.beginPath();
+      ctx.arc(265, 80, 5, 0, Math.PI * 2);
+      ctx.fillStyle = "#22c55e";
+      ctx.fill();
+
+      // Pass Badge Pill on Header Right
+      ctx.fillStyle = "rgba(34, 197, 94, 0.15)";
+      ctx.fillRect(830, 60, 290, 36);
+      ctx.strokeStyle = "#22c55e";
+      ctx.strokeRect(830, 60, 290, 36);
+      ctx.fillStyle = "#22c55e";
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillText("OFFICIAL PARTICIPANT PASS", 860, 83);
+
+      // 6. Stub Vertical Perforated / Dashed Line (at x = 800)
+      ctx.strokeStyle = "rgba(34, 197, 94, 0.35)";
+      ctx.setLineDash([8, 8]);
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(800, 118);
+      ctx.lineTo(800, 580);
+      ctx.stroke();
+      ctx.setLineDash([]); // Reset line dash
+
+      // Notches at the perforation ends
+      ctx.fillStyle = "#030804";
+      ctx.beginPath();
+      ctx.arc(800, 118, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(800, 580, 14, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // 7. Left Section: Event & Attendee Info
+      // Event Title
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "900 34px sans-serif";
+      const displayTitle =
+        opportunity.title.length > 32
+          ? opportunity.title.slice(0, 30) + "..."
+          : opportunity.title;
+      ctx.fillText(displayTitle, 75, 175);
+
+      // Event Meta: Organizer & Location & Date
+      ctx.fillStyle = "rgba(255, 255, 255, 0.65)";
+      ctx.font = "16px sans-serif";
+      ctx.fillText(
+        `Hosted by ${opportunity.organizer}  ·  ${opportunity.format} (${opportunity.location})`,
+        75,
+        205
+      );
+      ctx.fillStyle = "#4ade80";
+      ctx.font = "bold 15px sans-serif";
+      ctx.fillText(`Event Date: ${opportunity.date}`, 75, 230);
+
+      // Horizontal subtle line
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.1)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(75, 255);
+      ctx.lineTo(760, 255);
+      ctx.stroke();
+
+      // Attendee Detail Grid
+      const drawField = (label: string, val: string, x: number, y: number) => {
+        ctx.fillStyle = "#9ca3af";
+        ctx.font = "bold 12px sans-serif";
+        ctx.fillText(label.toUpperCase(), x, y);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "bold 19px sans-serif";
+        const trimmed = val.length > 28 ? val.slice(0, 26) + "..." : val;
+        ctx.fillText(trimmed, x, y + 26);
+      };
+
+      drawField("Primary Attendee", confirmedReg.fullName || "Builder", 75, 290);
+      drawField("Contact Email", confirmedReg.email || "-", 430, 290);
+
+      drawField(
+        "College / Organization",
+        confirmedReg.collegeOrCompany || "-",
+        75,
+        370
+      );
+      drawField(
+        "Participation Mode",
+        confirmedReg.teamType === "team"
+          ? `Team (${confirmedReg.teamName || "Squad"})`
+          : "Solo Builder",
+        430,
+        370
+      );
+
+      drawField("Phone / WhatsApp", confirmedReg.phone || "-", 75, 450);
+      drawField("Category", confirmedReg.userType || "College Student", 430, 450);
+
+      // Verified Status Ribbon
+      ctx.fillStyle = "rgba(34, 197, 94, 0.15)";
+      ctx.fillRect(75, 515, 240, 36);
+      ctx.strokeStyle = "#22c55e";
+      ctx.strokeRect(75, 515, 240, 36);
+      ctx.fillStyle = "#22c55e";
+      ctx.font = "bold 13px sans-serif";
+      ctx.fillText("● VERIFIED & CONFIRMED", 95, 538);
+
+      // 8. Right Section: Pass Stub & Barcode
+      ctx.fillStyle = "#9ca3af";
+      ctx.font = "bold 12px sans-serif";
+      ctx.fillText("REGISTRATION ID", 830, 170);
+
+      ctx.fillStyle = "#22c55e";
+      ctx.font = "900 28px monospace";
+      ctx.fillText(confirmedReg.id, 830, 205);
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+      ctx.font = "13px sans-serif";
+      ctx.fillText(
+        `Issued: ${new Date(confirmedReg.createdAt).toLocaleDateString()}`,
+        830,
+        235
+      );
+
+      // Simulated High-Tech Barcode Graphic
+      const barX = 830;
+      const barY = 270;
+      const barW = 285;
+      const barH = 130;
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(barX, barY, barW, barH);
+      ctx.strokeStyle = "rgba(34, 197, 94, 0.4)";
+      ctx.strokeRect(barX, barY, barW, barH);
+
+      // Draw stylized barcode lines
+      let currX = barX + 15;
+      const seed = confirmedReg.id.split("").reduce((acc, c) => acc + c.charCodeAt(0), 0);
+      let rand = seed;
+      const nextRand = () => {
+        rand = (rand * 9301 + 49297) % 233280;
+        return rand / 233280;
+      };
+
+      while (currX < barX + barW - 18) {
+        const lineW = nextRand() > 0.5 ? 3 : 1.5;
+        const isNeon = nextRand() > 0.75;
+        ctx.fillStyle = isNeon ? "#22c55e" : "#ffffff";
+        ctx.fillRect(currX, barY + 12, lineW, barH - 40);
+        currX += lineW + (nextRand() > 0.4 ? 4 : 2);
+      }
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.7)";
+      ctx.font = "bold 11px monospace";
+      ctx.fillText(`* ${confirmedReg.id} *`, barX + 65, barY + barH - 12);
+
+      // Scan Instructions
+      ctx.fillStyle = "#9ca3af";
+      ctx.font = "12px sans-serif";
+      ctx.fillText("Present this badge at event check-in.", 830, 435);
+      ctx.fillText("Valid for entry with photo ID.", 830, 455);
+
+      // 9. Card Footer
+      ctx.fillStyle = "rgba(0, 0, 0, 0.45)";
+      ctx.fillRect(42, 580, 1116, 53);
+      ctx.strokeStyle = "rgba(34, 197, 94, 0.2)";
+      ctx.beginPath();
+      ctx.moveTo(42, 580);
+      ctx.lineTo(1158, 580);
+      ctx.stroke();
+
+      ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+      ctx.font = "12px sans-serif";
+      ctx.fillText(
+        "Vybe Driven Platform  ·  Official Event Pass  ·  www.vybedriven.in  ·  Contact: vybedriven@gmail.com",
+        75,
+        612
+      );
+
+      // Export Canvas to PNG Blob and Download
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          throw new Error("Failed to create pass image blob");
+        }
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `pass-${confirmedReg.id}-${opportunity.slug}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        toast.success("🎟️ Official Digital Pass downloaded as PNG image!");
+      }, "image/png");
+    } catch (err) {
+      console.error("Canvas pass generation failed, falling back to summary:", err);
+      // Fallback to text file only if browser canvas is restricted
+      const textContent = `========================================================
 VYBE DRIVEN — OFFICIAL PARTICIPANT CONFIRMATION PASS
 ========================================================
 Event: ${opportunity.title}
@@ -402,40 +685,30 @@ Location: ${opportunity.location}
 Date: ${opportunity.date}
 
 REGISTRATION DETAILS:
---------------------------------------------------------
 Registration ID : ${confirmedReg.id}
 Registration Date: ${new Date(confirmedReg.createdAt).toLocaleString()}
 Full Name       : ${confirmedReg.fullName}
 Email           : ${confirmedReg.email}
 Phone           : ${confirmedReg.phone}
-Gender          : ${confirmedReg.gender || "-"}
-Location        : ${confirmedReg.location || "-"}
 College / Org   : ${confirmedReg.collegeOrCompany}
-User Category   : ${confirmedReg.userType || "-"}
 Participation   : ${confirmedReg.teamType.toUpperCase()}
-Team Name       : ${confirmedReg.teamName || "N/A (Solo / Squad matching)"}
-Team Size       : ${confirmedReg.teamSize || "1"}
-Teammates       : ${confirmedReg.teamMembers || "None"}
+Team Name       : ${confirmedReg.teamName || "Solo Builder"}
 Status          : ${confirmedReg.status}
-
-IMPORTANT STAGES:
-1. Idea Submission (PPT Round) — Active now until Dec 31, 2026
-2. 36-Hour Offline Hackathon — Grand Finale in Goa (Jan 16–17, 2027)
 
 Official Desk: hello@goabuilds.com
 Platform Support: vybedriven@gmail.com
 ========================================================`;
-
-    const blob = new Blob([textContent], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${confirmedReg.id}-${opportunity.slug}-pass.txt`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    toast.success("Confirmation pass downloaded.");
+      const blob = new Blob([textContent], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `pass-${confirmedReg.id}-${opportunity.slug}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      toast.success("Confirmation pass downloaded.");
+    }
   };
 
   return (
@@ -1225,9 +1498,9 @@ Platform Support: vybedriven@gmail.com
                 type="button"
                 variant="outline"
                 onClick={downloadPassSummary}
-                className="w-full sm:w-auto rounded-full text-xs font-semibold text-foreground"
+                className="w-full sm:w-auto rounded-full text-xs font-semibold text-foreground hover:border-neon hover:text-neon"
               >
-                <Download className="size-3.5 mr-1 text-neon" /> Download Pass
+                <Download className="size-3.5 mr-1 text-neon" /> Download Digital Pass (PNG)
               </Button>
             </div>
 

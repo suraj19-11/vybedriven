@@ -1002,7 +1002,7 @@ function OpportunityDetails() {
 
                 {/* Already Registered Card */}
                 {isRegistered ? (
-                  <div className="mt-5 rounded-xl border border-neon/50 bg-neon/10 p-4">
+                  <div className="mt-5 rounded-2xl border border-neon/50 bg-neon/10 p-4 shadow-glow-soft">
                     <div className="flex items-center gap-2 text-neon font-bold text-sm">
                       <CheckCircle2 className="size-5" />
                       <span>You're registered for this event!</span>
@@ -1014,21 +1014,21 @@ function OpportunityDetails() {
                       variant="outline"
                       size="sm"
                       onClick={handleRegisterClick}
-                      className="mt-3 w-full rounded-full border-neon/50 text-xs font-semibold text-neon hover:bg-neon hover:text-primary-foreground"
+                      className="mt-3 w-full rounded-full border-neon/50 text-xs font-bold text-neon hover:bg-neon hover:text-primary-foreground shadow-sm"
                     >
                       <Ticket className="size-3.5 mr-1.5" />
-                      View Participant Pass
+                      View Entry Pass / Ticket
                     </Button>
                   </div>
                 ) : (
-                  <>
-                    {/* Registration Button: External link if registrationUrl is set, otherwise direct modal */}
+                  <div className="mt-5 space-y-3">
+                    {/* Primary Registration Action */}
                     {item.registrationUrl ? (
                       <a
                         href={item.registrationUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="mt-5 sm:mt-6 flex w-full items-center justify-center gap-2 rounded-full bg-gradient-brand px-6 py-3.5 text-sm font-bold text-primary-foreground shadow-glow hover:brightness-105 transition"
+                        className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-brand px-6 py-3.5 text-sm font-bold text-primary-foreground shadow-glow hover:brightness-105 transition"
                       >
                         Register Now
                         <ArrowRight className="size-4" />
@@ -1037,15 +1037,29 @@ function OpportunityDetails() {
                       item.status !== "Sold out" && (
                         <Button
                           type="button"
-                          onClick={() => setRegModalOpen(true)}
-                          className="mt-5 sm:mt-6 w-full rounded-full bg-gradient-brand text-primary-foreground font-bold shadow-glow hover:brightness-105"
+                          onClick={handleRegisterClick}
+                          className="w-full rounded-full bg-gradient-brand text-primary-foreground font-bold py-6 text-sm shadow-glow hover:brightness-105"
                         >
                           Register Now
                           <Sparkles className="ml-2 inline size-4" />
                         </Button>
                       )
                     )}
-                  </>
+
+                    {/* Clean Sign In Option for Already Registered Users */}
+                    {!user && (
+                      <div className="text-center pt-1">
+                        <button
+                          type="button"
+                          onClick={() => setAuthGateOpen(true)}
+                          className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-neon transition cursor-pointer"
+                        >
+                          <LogIn className="size-3.5" />
+                          <span>Already registered? Sign in to view pass</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 )}
 
                 {/* Group Link */}
@@ -1057,27 +1071,9 @@ function OpportunityDetails() {
                     className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-neon/40 bg-surface/80 px-4 py-2.5 text-xs sm:text-sm font-semibold text-neon transition hover:border-neon hover:bg-neon/15 hover:shadow-glow-soft"
                   >
                     <MessageCircle className="size-4 text-neon" />
-                    <span>{item.groupLabel ?? "Join Group for Further Details"}</span>
+                    <span>{item.groupLabel ?? "Join Official WhatsApp Community"}</span>
                     <ExternalLink className="size-3.5 opacity-80" />
                   </a>
-                )}
-
-                {/* Related Links */}
-                {item.relatedLinks && (
-                  <div className="mt-4 space-y-2">
-                    {item.relatedLinks.map((link) => (
-                      <a
-                        key={link.url}
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center justify-between rounded-lg border border-border px-3 py-2 text-xs sm:text-sm font-medium hover:border-neon hover:text-neon"
-                      >
-                        <span>{link.label}</span>
-                        <ExternalLink className="size-3.5" />
-                      </a>
-                    ))}
-                  </div>
                 )}
 
                 {/* Organizer Contacts */}
