@@ -159,7 +159,7 @@ function ManageEventsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border pb-6">
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-neon">
-              <Sparkles className="size-4" /> Unstop-Style Host Hub
+              <Sparkles className="size-4" /> Vybe Driven Host Hub
             </div>
             <h1 className="mt-2 text-3xl sm:text-4xl font-black text-foreground">
               Organizer Dashboard

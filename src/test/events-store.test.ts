@@ -11,7 +11,7 @@ import {
   getUserRegistrations,
 } from "@/data/events-store";
 
-describe("Events Store & Unstop-Style Hosting", () => {
+describe("Events Store & Vybe Driven Host Hub", () => {
   beforeEach(() => {
     localStorage.clear();
   });
@@ -35,8 +35,8 @@ describe("Events Store & Unstop-Style Hosting", () => {
       prize: "₹1,00,000",
       image: "/test.jpg",
       organizer: "Fintech Club",
-      organizerId: "satyam-uuid-1",
-      organizerEmail: "satyam@vybedriven.in",
+      organizerId: "alex-uuid-1",
+      organizerEmail: "alex@vybedriven.in",
       registrationDeadline: "Nov 25, 2026",
       eligibility: "Open to all",
       teamSize: "1–4 Members",
@@ -53,57 +53,57 @@ describe("Events Store & Unstop-Style Hosting", () => {
 
   it("strictly enforces multi-user isolation and authorization", () => {
     const event = createHostedOpportunity({
-      title: "Satyam Super Hackathon",
+      title: "Global Builder Sprint",
       type: "Hackathon",
       tag: "AI",
-      description: "Satyam's exclusive hackathon.",
+      description: "Exclusive builder hackathon.",
       overview: "Overview",
       date: "Dec 1, 2026",
       location: "Mumbai",
       format: "Online",
       image: "/test.jpg",
-      organizer: "Satyam",
-      organizerId: "satyam-user-id",
-      organizerEmail: "satyam@test.com",
+      organizer: "Alex",
+      organizerId: "alex-user-id",
+      organizerEmail: "alex@test.com",
       registrationDeadline: "Nov 28, 2026",
       eligibility: "Students",
       teamSize: "2–4",
       fee: "Free",
     });
 
-    const satyamUser = { id: "satyam-user-id", email: "satyam@test.com" };
-    const vaibhavUser = { id: "vaibhav-user-id", email: "vaibhav@test.com" };
+    const alexUser = { id: "alex-user-id", email: "alex@test.com" };
+    const guestUser = { id: "guest-user-id", email: "guest@test.com" };
 
-    // Satyam is the organizer
-    expect(isEventOrganizer(event, satyamUser)).toBe(true);
+    // Alex is the organizer
+    expect(isEventOrganizer(event, alexUser)).toBe(true);
 
-    // Vaibhav is NOT the organizer of Satyam's event
-    expect(isEventOrganizer(event, vaibhavUser)).toBe(false);
+    // Guest is NOT the organizer of Alex's event
+    expect(isEventOrganizer(event, guestUser)).toBe(false);
 
     // Anonymous visitor is NOT organizer
     expect(isEventOrganizer(event, null)).toBe(false);
 
-    // Vaibhav cannot edit Satyam's event
+    // Guest cannot edit Alex's event
     expect(() => {
-      updateHostedOpportunity(event.slug, { title: "Hacked by Vaibhav" }, vaibhavUser);
+      updateHostedOpportunity(event.slug, { title: "Hacked by Guest" }, guestUser);
     }).toThrow(/Unauthorized/);
 
-    // Satyam CAN edit his event
+    // Alex CAN edit his event
     const updated = updateHostedOpportunity(
       event.slug,
-      { title: "Satyam Super Hackathon 2.0" },
-      satyamUser
+      { title: "Global Builder Sprint 2.0" },
+      alexUser
     );
-    expect(updated?.title).toBe("Satyam Super Hackathon 2.0");
+    expect(updated?.title).toBe("Global Builder Sprint 2.0");
   });
 
   it("handles event registration and isolates participant records", () => {
     const reg = submitRegistration({
       opportunitySlug: "fintech-innovation-sprint-2026",
       opportunityTitle: "Fintech Innovation Sprint 2026",
-      userId: "vaibhav-user-id",
-      fullName: "Vaibhav Builder",
-      email: "vaibhav@test.com",
+      userId: "guest-user-id",
+      fullName: "Guest Builder",
+      email: "guest@test.com",
       phone: "+91 99999 88888",
       collegeOrCompany: "IIT Bombay",
       teamType: "team",
@@ -114,19 +114,19 @@ describe("Events Store & Unstop-Style Hosting", () => {
     expect(reg.id).toMatch(/^REG-2026-/);
     expect(reg.status).toBe("Registered");
 
-    // Vaibhav can see his own registration
-    const vaibhavRegs = getUserRegistrations("vaibhav-user-id", "vaibhav@test.com");
-    expect(vaibhavRegs.length).toBe(1);
-    expect(vaibhavRegs[0].email).toBe("vaibhav@test.com");
+    // Guest can see their own registration
+    const guestRegs = getUserRegistrations("guest-user-id", "guest@test.com");
+    expect(guestRegs.length).toBe(1);
+    expect(guestRegs[0].email).toBe("guest@test.com");
 
-    // Satyam does NOT see Vaibhav's personal registration in his "My Registrations" tab
-    const satyamRegs = getUserRegistrations("satyam-user-id", "satyam@test.com");
-    expect(satyamRegs.length).toBe(0);
+    // Alex does NOT see Guest's personal registration in his "My Registrations" tab
+    const alexRegs = getUserRegistrations("alex-user-id", "alex@test.com");
+    expect(alexRegs.length).toBe(0);
 
     // The event organizer can see all participants registered for that event
     const eventApplicants = getRegistrationsBySlug("fintech-innovation-sprint-2026");
     expect(eventApplicants.length).toBe(1);
-    expect(eventApplicants[0].fullName).toBe("Vaibhav Builder");
+    expect(eventApplicants[0].fullName).toBe("Guest Builder");
   });
 
   it("allows updating registration status by organizer", () => {

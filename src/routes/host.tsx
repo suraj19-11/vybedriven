@@ -44,7 +44,7 @@ export const Route = createFileRoute("/host")({
     meta: [
       { title: search.edit ? "Edit Hosted Event — Vybe Driven" : "Host a Hackathon or Event (Free Organizer Portal) — Vybe Driven (Vybe)" },
       { name: "description", content: "Host your college hackathon, coding competition, or developer meetup on Vybe Driven (Vybe / Vibe Driven). Publish in minutes, reach thousands of ambitious students, and manage applications." },
-      { name: "keywords", content: "host hackathon, list hackathon, college hackathon organizer, hackathon management platform, unstop alternative, vybe driven, vybe, vibe driven, vibe" },
+      { name: "keywords", content: "host hackathon, list hackathon, college hackathon organizer, hackathon management platform, vybe driven, vybe, vibe driven, vibe" },
       { property: "og:title", content: "Host a Hackathon or Tech Event on Vybe Driven" },
       { property: "og:description", content: "Reach ambitious developers and builders across India. Publish and manage your hackathon on Vybe Driven." },
       { property: "og:url", content: "https://www.vybedriven.in/host" },
@@ -763,7 +763,7 @@ function HostEventPage() {
                     type="url"
                     value={registrationUrl}
                     onChange={(e) => setRegistrationUrl(e.target.value)}
-                    placeholder="https://unstop.com/... or Google Form"
+                    placeholder="https://forms.gle/... or official website"
                     className="mt-1.5 w-full rounded-xl border border-border bg-surface px-4 py-2.5 text-sm outline-none focus:border-neon"
                   />
                 </div>

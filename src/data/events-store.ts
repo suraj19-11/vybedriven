@@ -210,10 +210,20 @@ export function createHostedOpportunity(input: {
   return newEvent;
 }
 
+const envAdminEmails = (
+  typeof import.meta !== "undefined" && import.meta.env?.["VITE_ADMIN_EMAILS"]
+    ? String(import.meta.env["VITE_ADMIN_EMAILS"])
+    : ""
+)
+  .split(",")
+  .map((e: string) => e.trim().toLowerCase())
+  .filter(Boolean);
+
 export const ADMIN_EMAILS = [
   "vybedriven@gmail.com",
-  "pandeysatyam2030@gmail.com",
+  "admin@vybedriven.in",
   "hello@goabuilds.com",
+  ...envAdminEmails,
 ];
 
 export function isPlatformAdmin(user?: { id?: string; email?: string | null } | null): boolean {

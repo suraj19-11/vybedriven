@@ -117,7 +117,13 @@ function AuthPage() {
 
         setBusy(false);
         if (authError) {
-          setError(authError.message);
+          if (authError.message.toLowerCase().includes("user already registered")) {
+            setError(
+              "An account with this email already exists. Please switch to 'Sign In' or click 'Continue with Google' above!"
+            );
+          } else {
+            setError(authError.message);
+          }
           return;
         }
 
@@ -160,6 +166,10 @@ function AuthPage() {
         if (authError.message.toLowerCase().includes("email not confirmed")) {
           setError(
             "⚠️ Your email is not verified yet. Please check your inbox (and Spam folder) for the verification email, or click 'Resend Verification' below."
+          );
+        } else if (authError.message.toLowerCase().includes("invalid login credentials")) {
+          setError(
+            "Invalid email or password. If you originally signed in with Google, please click 'Continue with Google' above. Or click 'Forgot password?' below to reset or set a new password."
           );
         } else {
           setError(authError.message);
@@ -288,9 +298,9 @@ function AuthPage() {
           </p>
           <div className="mt-10 grid max-w-md grid-cols-2 gap-3">
             {[
-              { label: "Hackathons", count: "ADAPPT & IDEA '26" },
-              { label: "Community", count: "2,000+ Builders" },
-              { label: "Prize Pools", count: "₹1,00,000+" },
+              { label: "Hackathons", count: "50+ Pan-India Events" },
+              { label: "Community", count: "50,000+ Builders" },
+              { label: "Prize Pools", count: "₹50 Lakhs+ Pool" },
               { label: "Incubation", count: "Top Mentors & Perks" },
             ].map((item) => (
               <div key={item.label} className="rounded-xl border border-border bg-surface/60 p-4">
@@ -380,7 +390,7 @@ function AuthPage() {
                     value={name}
                     onChange={(event) => setName(event.target.value)}
                     className="w-full bg-transparent text-sm outline-none"
-                    placeholder="e.g. Satyam Pandey"
+                    placeholder="e.g. Alex Johnson"
                   />
                 </div>
               </label>

@@ -299,7 +299,11 @@ function EventAuthGateDialog({
 
         if (signUpErr) {
           setBusy(false);
-          setError(signUpErr.message);
+          if (signUpErr.message.toLowerCase().includes("user already registered")) {
+            setError("An account with this email already exists. Please switch to 'Sign In' or use 'Continue with Google' above!");
+          } else {
+            setError(signUpErr.message);
+          }
           return;
         }
 
@@ -321,6 +325,8 @@ function EventAuthGateDialog({
         setBusy(false);
         if (signInErr.message.toLowerCase().includes("email not confirmed")) {
           setError("⚠️ Your email is not verified yet. Please check your inbox (and spam folder) for the verification email.");
+        } else if (signInErr.message.toLowerCase().includes("invalid login credentials")) {
+          setError("Invalid email or password. If you originally signed in with Google, please click 'Continue with Google' above. Or click 'Forgot password?' to reset.");
         } else {
           setError(signInErr.message);
         }
@@ -428,7 +434,7 @@ function EventAuthGateDialog({
                   type="text"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
-                  placeholder="e.g. Satyam Pandey"
+                  placeholder="e.g. Alex Johnson"
                   className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
                 />
               </div>
@@ -461,6 +467,19 @@ function EventAuthGateDialog({
                 className="w-full rounded-xl border border-border bg-surface px-3 py-2 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
               />
             </div>
+
+            {authMode === "signin" && (
+              <div className="text-right">
+                <a
+                  href="/forgot-password"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-semibold text-neon hover:underline"
+                >
+                  Forgot password?
+                </a>
+              </div>
+            )}
 
             <div className="pt-2 flex items-center justify-between gap-3">
               <Button

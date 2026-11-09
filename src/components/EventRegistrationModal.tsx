@@ -172,7 +172,13 @@ export function EventRegistrationModal({
 
         if (signUpErr) {
           setAuthBusy(false);
-          setAuthError(signUpErr.message);
+          if (signUpErr.message.toLowerCase().includes("user already registered")) {
+            setAuthError(
+              "An account with this email already exists. Please switch to 'Sign In' or click 'Continue with Google' above!"
+            );
+          } else {
+            setAuthError(signUpErr.message);
+          }
           return;
         }
 
@@ -207,6 +213,10 @@ export function EventRegistrationModal({
         if (signInErr.message.toLowerCase().includes("email not confirmed")) {
           setAuthError(
             "⚠️ Your email address is not verified yet. Please check your inbox and spam folder for the confirmation link to activate your account."
+          );
+        } else if (signInErr.message.toLowerCase().includes("invalid login credentials")) {
+          setAuthError(
+            "Invalid email or password. If you originally signed in with Google, please click 'Continue with Google' above. Or click 'Forgot password?' below to reset."
           );
         } else {
           setAuthError(signInErr.message);
@@ -581,7 +591,7 @@ Platform Support: vybedriven@gmail.com
                       type="text"
                       value={authName}
                       onChange={(e) => setAuthName(e.target.value)}
-                      placeholder="e.g. Satyam Pandey"
+                      placeholder="e.g. Alex Johnson"
                       className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
                     />
                   </div>
@@ -628,6 +638,19 @@ Platform Support: vybedriven@gmail.com
                   className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
                 />
               </div>
+
+              {authMode === "signin" && (
+                <div className="text-right">
+                  <a
+                    href="/forgot-password"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-[11px] font-semibold text-neon hover:underline"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+              )}
 
               <div className="pt-2 flex items-center justify-between gap-3">
                 <Button

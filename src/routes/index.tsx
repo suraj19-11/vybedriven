@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import {
-  ArrowRight, Calendar, Trophy, MapPin, Globe, Sparkles,
+  ArrowRight, Calendar, Trophy, MapPin, Globe, Sparkles, MessageCircle,
 } from "lucide-react";
 import { Navbar, Footer } from "@/components/SiteChrome";
 import { Reveal, Eyebrow, PrimaryBtn, GhostBtn } from "@/components/ui-hd";
@@ -151,8 +151,17 @@ function Hero() {
           <p className="mt-4 sm:mt-6 max-w-[590px] text-base sm:text-lg lg:text-xl text-hero-muted">
             Discover hackathons, competitions and technology events built for ambitious developers, creators and innovators.
           </p>
-          <div className="mt-7 sm:mt-9 flex flex-col min-[480px]:flex-row gap-3 w-full sm:w-auto">
+          <div className="mt-7 sm:mt-9 flex flex-col min-[480px]:flex-row items-stretch min-[480px]:items-center gap-3 w-full sm:w-auto">
             <PrimaryBtn href="/hackathons" className="w-full min-[480px]:w-auto justify-center">Explore Hackathons <ArrowRight className="size-4" /></PrimaryBtn>
+            <a
+              href="https://chat.whatsapp.com/FTO9jg5AgW3CSZuA3PZVIU?s=cl&p=a&iam=2"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex h-11 sm:h-12 items-center justify-center gap-2 rounded-xl border border-emerald-500/50 bg-emerald-500/15 px-5 text-sm font-bold text-emerald-400 hover:bg-emerald-500/25 hover:border-emerald-400 hover:text-emerald-300 transition-all shadow-glow-soft backdrop-blur-md"
+            >
+              <MessageCircle className="size-4 shrink-0 text-emerald-400" />
+              <span>Join Community for Event Updates</span>
+            </a>
           </div>
         </div>
       </div>
@@ -442,6 +451,15 @@ function CTA() {
             <p className="mx-auto mt-4 sm:mt-5 max-w-lg text-sm sm:text-base text-muted-foreground">Find your next challenge, build with great people and turn your ideas into something real.</p>
             <div className="mt-7 sm:mt-9 flex flex-col justify-center gap-3 sm:flex-row">
               <PrimaryBtn href="/hackathons" className="w-full sm:w-auto justify-center">Explore Hackathons <ArrowRight className="size-4" /></PrimaryBtn>
+              <a
+                href="https://chat.whatsapp.com/FTO9jg5AgW3CSZuA3PZVIU?s=cl&p=a&iam=2"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-5 text-sm font-bold text-emerald-400 hover:bg-emerald-500/20 hover:border-emerald-400 hover:text-emerald-300 transition shadow-glow-soft"
+              >
+                <MessageCircle className="size-4 text-emerald-400" />
+                <span>Join WhatsApp Community</span>
+              </a>
               <GhostBtn href="/auth?mode=signin&next=%2Fprofile" className="w-full sm:w-auto justify-center">Join Vybe Driven</GhostBtn>
             </div>
           </div>

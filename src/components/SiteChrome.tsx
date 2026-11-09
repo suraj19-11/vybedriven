@@ -126,7 +126,7 @@ function ProfileMenu() {
         />
       </button>
 
-      {/* Unstop-Style Rich Profile Card Dropdown */}
+      {/* Rich Builder Profile Card Dropdown */}
       {open && (
         <div className="absolute right-0 mt-3 w-80 sm:w-84 rounded-3xl border border-neon/30 bg-[#070e09]/95 p-5 shadow-2xl backdrop-blur-2xl animate-in fade-in slide-in-from-top-2 duration-200 z-50 text-foreground">
           {/* Top Row: Avatar with Progress Ring + Edit Profile Button */}
@@ -181,7 +181,7 @@ function ProfileMenu() {
             </p>
           </div>
 
-          {/* Stats Row (Unstop style XP & Badges) */}
+          {/* Stats Row (Builder XP & Rank) */}
           <div className="mt-4 grid grid-cols-2 gap-2 rounded-2xl border border-border/80 bg-surface/60 p-2.5">
             <div className="flex items-center gap-2 rounded-xl bg-background/50 px-2.5 py-2">
               <span className="text-amber-400 text-sm">⭐</span>
@@ -202,33 +202,43 @@ function ProfileMenu() {
           {/* Menu Navigation Items */}
           <div className="mt-4 space-y-1 text-xs sm:text-sm">
             <Link
-              to="/hackathons"
+              to="/manage-events"
+              search={{ tab: "my-registrations" }}
               onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-foreground/90 font-medium transition hover:bg-surface hover:text-neon"
             >
               <Gift className="size-4 text-neon" />
-              <span>Registered Hackathons</span>
+              <span>My Registrations &amp; Passes</span>
             </Link>
 
             <Link
-              to="/opportunities/$slug"
-              params={{ slug: "adappt-5-0" }}
+              to="/hackathons"
               onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-foreground/90 font-medium transition hover:bg-surface hover:text-neon"
             >
               <Trophy className="size-4 text-amber-400" />
-              <span>ADAPPT 5.0 Challenge</span>
+              <span>Explore All Hackathons</span>
             </Link>
 
             <Link
-              to="/opportunities/$slug"
-              params={{ slug: "idea-competition-2026" }}
+              to="/host"
               onClick={() => setOpen(false)}
               className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-foreground/90 font-medium transition hover:bg-surface hover:text-neon"
             >
-              <Sparkles className="size-4 text-cyan-400" />
-              <span>Idea Competition '26</span>
+              <PlusCircle className="size-4 text-cyan-400" />
+              <span>Host a Hackathon</span>
             </Link>
+
+            <a
+              href="https://chat.whatsapp.com/FTO9jg5AgW3CSZuA3PZVIU?s=cl&p=a&iam=2"
+              target="_blank"
+              rel="noreferrer"
+              onClick={() => setOpen(false)}
+              className="flex items-center gap-2.5 rounded-xl px-3 py-2 text-emerald-400 font-medium transition hover:bg-emerald-500/10"
+            >
+              <MessageCircle className="size-4 text-emerald-400" />
+              <span>Official WhatsApp Community</span>
+            </a>
 
             <Link
               to="/profile"
@@ -310,7 +320,7 @@ function NewUserWelcomePrompt() {
               Join Vybe Driven!
             </h4>
             <p className="text-[11px] text-muted-foreground">
-              20,000+ builders across India
+              50,000+ builders across India
             </p>
           </div>
         </div>
@@ -559,11 +569,20 @@ export function Footer() {
                 <span className="relative inline-flex size-2 rounded-full bg-neon" />
               </span>
               <span className="text-muted-foreground">Live Across India</span>
-              <span className="text-neon font-semibold">· 25.4K+ Builders</span>
+              <span className="text-neon font-semibold">· 50K+ Builders</span>
             </div>
 
             {/* Social & Contact pills */}
             <div className="pt-2 flex flex-wrap gap-2.5">
+              <a
+                href="https://chat.whatsapp.com/FTO9jg5AgW3CSZuA3PZVIU?s=cl&p=a&iam=2"
+                target="_blank"
+                rel="noreferrer"
+                aria-label="Join Vybe Driven WhatsApp Community"
+                className="group flex size-10 items-center justify-center rounded-xl border border-emerald-500/40 bg-emerald-500/10 transition hover:border-emerald-400 hover:bg-emerald-500/20 hover:text-emerald-400 hover:-translate-y-0.5"
+              >
+                <MessageCircle className="size-4 text-emerald-400 transition group-hover:scale-110" />
+              </a>
               <a
                 href="https://www.instagram.com/vybedriven"
                 target="_blank"
@@ -619,6 +638,17 @@ export function Footer() {
             <div>
               <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Community</h4>
               <ul className="mt-4 space-y-2.5">
+                <li>
+                  <a
+                    href="https://chat.whatsapp.com/FTO9jg5AgW3CSZuA3PZVIU?s=cl&p=a&iam=2"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group inline-flex items-center gap-1.5 text-sm text-emerald-400 font-semibold transition hover:text-emerald-300"
+                  >
+                    <span className="size-1 rounded-full bg-emerald-400" />
+                    WhatsApp Community
+                  </a>
+                </li>
                 <li>
                   <Link to="/about" className="group inline-flex items-center gap-1.5 text-sm text-muted-foreground transition hover:text-neon">
                     <span className="size-1 rounded-full bg-transparent transition group-hover:bg-neon" />
