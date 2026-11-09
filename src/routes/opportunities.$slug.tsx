@@ -24,6 +24,7 @@ import {
   ChevronDown,
   ChevronUp,
   Lock,
+  LogIn,
 } from "lucide-react";
 import {
   Dialog,
@@ -1084,7 +1085,7 @@ function OpportunityDetails() {
                       <div className="text-center pt-1">
                         <button
                           type="button"
-                          onClick={() => setAuthGateOpen(true)}
+                          onClick={() => setExploreGateOpen(true)}
                           className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground hover:text-neon transition cursor-pointer"
                         >
                           <LogIn className="size-3.5" />
