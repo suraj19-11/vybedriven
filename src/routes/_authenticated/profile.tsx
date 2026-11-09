@@ -12,6 +12,7 @@ import {
   type EventRegistration,
 } from "@/data/events-store";
 import { TeamManagementModal } from "@/components/TeamManagementModal";
+import { IdeaSubmissionModal } from "@/components/IdeaSubmissionModal";
 import { Navbar, Footer } from "@/components/SiteChrome";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -86,6 +87,7 @@ function ProfilePage() {
   const [activeTab, setActiveTab] = useState<"profile" | "hosted" | "registrations">("profile");
   const [syncTick, setSyncTick] = useState(0);
   const [managingTeamReg, setManagingTeamReg] = useState<EventRegistration | null>(null);
+  const [submittingIdeaReg, setSubmittingIdeaReg] = useState<EventRegistration | null>(null);
 
   useEffect(() => {
     const onSync = () => setSyncTick((t) => t + 1);
@@ -501,6 +503,26 @@ function ProfilePage() {
                                         </Button>
                                       </div>
                                     )}
+                                    {/* Round 1 PPT Submission Action (Unlocked for 2+ Members) */}
+                                    {teamCount >= 2 && (
+                                      <Button
+                                        size="sm"
+                                        onClick={() => setSubmittingIdeaReg(reg)}
+                                        className="mt-2.5 w-full rounded-xl bg-neon text-primary-foreground font-black text-xs shadow-glow hover:brightness-105"
+                                      >
+                                        {reg.submission?.pptUrl ? (
+                                          <>
+                                            <CheckCircle2 className="size-3.5 mr-1" />
+                                            Round 1 PPT Submitted (Edit Deck)
+                                          </>
+                                        ) : (
+                                          <>
+                                            <Sparkles className="size-3.5 mr-1" />
+                                            Submit Round 1 Idea (PPT Deck) 🚀
+                                          </>
+                                        )}
+                                      </Button>
+                                    )}
                                   </div>
                                 ) : (
                                   <p className="text-xs text-muted-foreground">
@@ -669,6 +691,16 @@ function ProfilePage() {
           onOpenChange={(open) => !open && setManagingTeamReg(null)}
           onUpdated={() => {
             setManagingTeamReg(null);
+            setSyncTick((t) => t + 1);
+          }}
+        />
+
+        <IdeaSubmissionModal
+          registration={submittingIdeaReg}
+          open={Boolean(submittingIdeaReg)}
+          onOpenChange={(open) => !open && setSubmittingIdeaReg(null)}
+          onSubmitted={() => {
+            setSubmittingIdeaReg(null);
             setSyncTick((t) => t + 1);
           }}
         />

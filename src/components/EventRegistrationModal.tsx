@@ -42,6 +42,7 @@ import {
   type TeammateDetail,
 } from "@/data/events-store";
 import { toast } from "sonner";
+import { IdeaSubmissionModal } from "@/components/IdeaSubmissionModal";
 
 interface EventRegistrationModalProps {
   opportunity: Opportunity;
@@ -108,6 +109,7 @@ export function EventRegistrationModal({
   // Submitting & Confirmed state
   const [submitting, setSubmitting] = useState(false);
   const [confirmedReg, setConfirmedReg] = useState<EventRegistration | null>(null);
+  const [ideaModalOpen, setIdeaModalOpen] = useState(false);
 
   // Inline Auth State for unauthenticated visitors
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
@@ -1795,6 +1797,27 @@ Platform Support: vybedriven@gmail.com
                         🟢 Live Now
                       </span>
                     </div>
+
+                    {confirmedReg.teamType === "team" && (1 + (confirmedReg.teammates?.length || 0)) >= 2 ? (
+                      <div className="pt-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => setIdeaModalOpen(true)}
+                          className="w-full rounded-xl bg-neon text-primary-foreground font-black text-xs py-2 shadow-glow hover:brightness-105"
+                        >
+                          <Sparkles className="size-3.5 mr-1" />
+                          {confirmedReg.submission?.pptUrl
+                            ? "View / Edit Round 1 PPT Deck ✓"
+                            : "Submit Round 1 Idea (PPT Deck) 🚀"}
+                        </Button>
+                      </div>
+                    ) : confirmedReg.teamType === "team" ? (
+                      <div className="rounded-lg bg-amber-500/10 border border-amber-500/30 p-2 text-[11px] text-amber-300">
+                        🔒 Round 1 PPT submission unlocks once teammate #2 joins.
+                      </div>
+                    ) : null}
+
                     <div className="flex items-center justify-between text-muted-foreground">
                       <span>2. 36-Hour Offline Hackathon — Grand Finale</span>
                       <span className="text-[11px] font-mono text-foreground font-semibold">Jan 16–17, 2027</span>
@@ -1863,6 +1886,20 @@ Platform Support: vybedriven@gmail.com
             </div>
           </div>
         )}
+
+        <IdeaSubmissionModal
+          registration={confirmedReg}
+          open={ideaModalOpen}
+          onOpenChange={setIdeaModalOpen}
+          onSubmitted={() => {
+            if (confirmedReg) {
+              const fresh = getRegistrationsBySlug(opportunity.slug).find(
+                (r) => r.id === confirmedReg.id
+              );
+              if (fresh) setConfirmedReg(fresh);
+            }
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

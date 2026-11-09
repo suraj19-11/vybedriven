@@ -40,6 +40,7 @@ import {
 } from "@/data/events-store";
 import { useAuth } from "@/lib/auth";
 import { toast } from "sonner";
+import { IdeaSubmissionModal } from "@/components/IdeaSubmissionModal";
 
 interface TeamManagementModalProps {
   registration: EventRegistration | null;
@@ -61,6 +62,7 @@ export function TeamManagementModal({
   const [lookingForTeammates, setLookingForTeammates] = useState(false);
   const [teammates, setTeammates] = useState<TeammateDetail[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [ideaModalOpen, setIdeaModalOpen] = useState(false);
 
   // New member form fields
   const [newName, setNewName] = useState("");
@@ -453,6 +455,39 @@ export function TeamManagementModal({
             </div>
           </div>
 
+          {/* Round 1 PPT Submission Quick Access */}
+          {totalMembers >= 2 ? (
+            <div className="rounded-2xl border-2 border-emerald-500/40 bg-emerald-950/20 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-glow-soft">
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="size-2 rounded-full bg-emerald-400 animate-pulse" />
+                  <span className="text-xs font-black uppercase tracking-wider text-emerald-400">
+                    Round 1 Live: Idea Submission (PPT Round)
+                  </span>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {registration.submission?.pptUrl
+                    ? `✓ Submitted: "${registration.submission.projectTitle}" (${registration.submission.track})`
+                    : "Squad size is 2+! Any verified squad member can submit the PPT deck."}
+                </p>
+              </div>
+              <Button
+                type="button"
+                onClick={() => setIdeaModalOpen(true)}
+                className="rounded-xl bg-neon text-primary-foreground font-black text-xs px-4 py-2.5 shadow-glow hover:brightness-105 shrink-0"
+              >
+                {registration.submission?.pptUrl ? "Edit PPT Deck ✓" : "Submit Round 1 PPT 🚀"}
+              </Button>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-300 flex items-center gap-2">
+              <AlertCircle className="size-4 text-amber-400 shrink-0" />
+              <span>
+                <strong>Round 1 PPT Locked:</strong> Share your team code above with at least 1 friend to unlock PPT submission.
+              </span>
+            </div>
+          )}
+
           {/* Members Roster List */}
           <div className="space-y-3">
             <div className="flex items-center justify-between text-xs font-semibold text-muted-foreground">
@@ -702,6 +737,18 @@ export function TeamManagementModal({
             )}
           </div>
         </div>
+
+        <IdeaSubmissionModal
+          registration={registration}
+          open={ideaModalOpen}
+          onOpenChange={setIdeaModalOpen}
+          onSubmitted={() => {
+            if (registration) {
+              const fresh = getStoredRegistrations().find((r) => r.id === registration.id);
+              if (fresh && onUpdated) onUpdated(fresh);
+            }
+          }}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -512,6 +512,7 @@ function ManageEventsPage() {
                         <th className="px-4 py-3">Contact & Links</th>
                         <th className="px-4 py-3">College / Company</th>
                         <th className="px-4 py-3">Team Details</th>
+                        <th className="px-4 py-3">Round 1 (PPT)</th>
                         <th className="px-4 py-3">Applied At</th>
                       </tr>
                     </thead>
@@ -661,6 +662,35 @@ function ManageEventsPage() {
                               <div>
                                 <span className="text-muted-foreground">Solo Entry</span>
                               </div>
+                            )}
+                          </td>
+
+                          {/* Round 1 PPT Submission */}
+                          <td className="px-4 py-3.5 text-xs">
+                            {applicant.submission?.pptUrl ? (
+                              <div className="space-y-1">
+                                <span className="inline-flex items-center gap-1 rounded bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-bold text-emerald-400">
+                                  <CheckCircle2 className="size-3" /> Submitted
+                                </span>
+                                <div className="font-semibold text-foreground truncate max-w-[180px]">
+                                  {applicant.submission.projectTitle}
+                                </div>
+                                <div className="text-[10px] text-muted-foreground truncate max-w-[180px]">
+                                  {applicant.submission.track}
+                                </div>
+                                <a
+                                  href={applicant.submission.pptUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center gap-1 text-[11px] font-bold text-neon hover:underline"
+                                >
+                                  Open Slides ↗
+                                </a>
+                              </div>
+                            ) : (
+                              <span className="rounded bg-surface-2 border border-border px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                                Pending
+                              </span>
                             )}
                           </td>
 

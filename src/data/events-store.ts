@@ -70,11 +70,23 @@ export type EventRegistration = {
   githubUrl?: string;
   linkedinUrl?: string;
   projectIdea?: string;
+  submission?: IdeaSubmission;
   status: "Registered" | "Shortlisted" | "Confirmed" | "Attended" | "Cancelled";
   createdAt: string;
   updatedAt?: string;
   teamSubmitted?: boolean;
 };
+
+export interface IdeaSubmission {
+  projectTitle: string;
+  track: string;
+  summary: string;
+  pptUrl: string;
+  demoUrl?: string;
+  submittedAt: string;
+  submittedBy: string;
+  updatedAt?: string;
+}
 
 const STORAGE_HOSTED_EVENTS = "hd_hosted_events";
 const STORAGE_REGISTRATIONS = "hd_event_registrations";
@@ -479,6 +491,24 @@ export function mergeRemoteRegistrations(remoteRows: any[]): void {
       map.delete(row.id);
       continue;
     }
+    const existing = map.get(row.id);
+    let parsedSubmission: IdeaSubmission | undefined = existing?.submission;
+    let cleanTeamMembers = row.team_members;
+
+    if (row.team_members && typeof row.team_members === "string") {
+      if (row.team_members.startsWith("SUBMISSION::")) {
+        try {
+          parsedSubmission = JSON.parse(row.team_members.slice(12));
+        } catch {}
+      } else if (row.team_members.startsWith("{")) {
+        try {
+          const parsedObj = JSON.parse(row.team_members);
+          if (parsedObj.submission) parsedSubmission = parsedObj.submission;
+          if (parsedObj.summary || parsedObj.members) cleanTeamMembers = parsedObj.summary || parsedObj.members;
+        } catch {}
+      }
+    }
+
     const parsed: EventRegistration = {
       id: row.id,
       opportunitySlug: row.opportunity_slug,
@@ -496,12 +526,14 @@ export function mergeRemoteRegistrations(remoteRows: any[]): void {
       teamType: row.team_type || "solo",
       teamName: row.team_name,
       teamSize: row.team_size,
-      teamMembers: row.team_members,
+      teamMembers: cleanTeamMembers,
       teamCode: row.team_code || row.id,
       teammates: row.teammates || [],
       lookingForTeammates: row.looking_for_teammates,
       termsAccepted: row.terms_accepted,
       status: row.status || "Registered",
+      submission: parsedSubmission,
+      projectIdea: parsedSubmission?.projectTitle || existing?.projectIdea,
       createdAt: row.created_at,
     };
     map.set(parsed.id, parsed);
@@ -900,6 +932,74 @@ export function updateRegistrationStatus(
   return true;
 }
 
+// Save or update Round 1 Idea Submission (PPT Round)
+export function saveIdeaSubmission(
+  registrationId: string,
+  submissionData: Omit<IdeaSubmission, "submittedAt"> & { submittedAt?: string }
+): EventRegistration {
+  const list = getStoredRegistrations();
+  const index = list.findIndex(
+    (r) => r.id === registrationId || r.teamCode === registrationId
+  );
+  if (index === -1) {
+    throw new Error("Registration squad not found.");
+  }
+
+  const current = list[index];
+  const fullSubmission: IdeaSubmission = {
+    ...submissionData,
+    submittedAt: current.submission?.submittedAt || submissionData.submittedAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const updated: EventRegistration = {
+    ...current,
+    submission: fullSubmission,
+    projectIdea: fullSubmission.projectTitle,
+    updatedAt: new Date().toISOString(),
+  };
+
+  list[index] = updated;
+
+  if (typeof window !== "undefined") {
+    localStorage.setItem(STORAGE_REGISTRATIONS, JSON.stringify(list));
+    notifyStoreChange();
+
+    // Persist to Supabase in team_members column
+    import("@/integrations/supabase/client")
+      .then(({ supabase }) => {
+        const teamSummary =
+          updated.teammates && updated.teammates.length > 0
+            ? updated.teammates.map((t) => `${t.name} (${t.email})`).join(", ")
+            : "";
+        const payload = JSON.stringify({
+          summary: teamSummary,
+          submission: updated.submission,
+        });
+
+        supabase
+          .from("registrations" as any)
+          .update({
+            team_members: payload,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", updated.id)
+          .then(({ error }) => {
+            if (error) {
+              console.warn("[Database Sync] Supabase submission update notice:", error.message);
+            } else {
+              console.log("[Database Sync] Persisted Round 1 submission to Supabase cloud.");
+            }
+          });
+      })
+      .catch((err) => {
+        console.warn("[Database Sync] Error importing Supabase for submission:", err);
+      });
+  }
+
+  return updated;
+}
+
 // Check if user is registered for an opportunity (supports Leader & Verified Teammates)
 export function isUserRegistered(slug: string, userIdOrEmail?: string): boolean {
   if (!userIdOrEmail) return false;
@@ -963,6 +1063,12 @@ export function exportRegistrationsToCSV(
     "Teammates Breakdown",
     "Looking for Teammates",
     "Status",
+    "Round 1 (PPT) Status",
+    "Project Title",
+    "Domain / Track",
+    "PPT Presentation Link",
+    "Demo Link",
+    "Solution Summary",
   ];
 
   const escapeCSV = (str?: string | null) => {
@@ -994,6 +1100,12 @@ export function exportRegistrationsToCSV(
     ),
     escapeCSV(r.lookingForTeammates ? "Yes" : "No"),
     escapeCSV(r.status),
+    escapeCSV(r.submission?.pptUrl ? "Submitted" : "Pending"),
+    escapeCSV(r.submission?.projectTitle || r.projectIdea || "-"),
+    escapeCSV(r.submission?.track || "-"),
+    escapeCSV(r.submission?.pptUrl || "-"),
+    escapeCSV(r.submission?.demoUrl || "-"),
+    escapeCSV(r.submission?.summary || "-"),
   ]);
 
   const csvContent =

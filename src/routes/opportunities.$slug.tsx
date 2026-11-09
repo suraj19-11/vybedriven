@@ -41,6 +41,7 @@ import { getOpportunity, type Opportunity } from "@/data/opportunities";
 import { useAuth } from "@/lib/auth";
 import { EventRegistrationModal } from "@/components/EventRegistrationModal";
 import { TeamManagementModal } from "@/components/TeamManagementModal";
+import { IdeaSubmissionModal } from "@/components/IdeaSubmissionModal";
 import { isUserRegistered, getRegistrationCount, useEventRegistrations, isEventOrganizer, type EventRegistration } from "@/data/events-store";
 
 type OpportunitySearch = {
@@ -521,6 +522,7 @@ function OpportunityDetails() {
   const [regModalOpen, setRegModalOpen] = useState(false);
   const [exploreGateOpen, setExploreGateOpen] = useState(false);
   const [teamModalOpen, setTeamModalOpen] = useState(false);
+  const [ideaModalOpen, setIdeaModalOpen] = useState(false);
 
   const incomingJoinCode = search.joinCode || search.joinTeam;
 
@@ -1032,46 +1034,127 @@ function OpportunityDetails() {
 
                 {/* Already Registered Card */}
                 {isRegistered ? (
-                  <div className="mt-5 rounded-2xl border border-neon/50 bg-neon/10 p-4 shadow-glow-soft">
-                    <div className="flex items-center gap-2 text-neon font-bold text-sm">
-                      <CheckCircle2 className="size-5" />
-                      <span>You're registered for this event!</span>
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Your application has been received by {item.organizer}.
-                    </p>
-                    {userRegRecord?.teamType === "team" && (1 + (userRegRecord.teammates?.length || 0)) < 2 ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleRegisterClick}
-                        className="mt-3 w-full rounded-full border-amber-500/50 text-xs font-bold text-amber-400 hover:bg-amber-500/15 shadow-sm"
-                      >
-                        <Lock className="size-3.5 mr-1.5 text-amber-400" />
-                        Unlock Pass — Invite Teammate (1/4)
-                      </Button>
-                    ) : (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleRegisterClick}
-                        className="mt-3 w-full rounded-full border-neon/50 text-xs font-bold text-neon hover:bg-neon hover:text-primary-foreground shadow-sm"
-                      >
-                        <Ticket className="size-3.5 mr-1.5" />
-                        View Entry Pass / Ticket
-                      </Button>
-                    )}
+                  <div className="mt-5 space-y-4">
+                    {/* Unstop-Style Round 1: Idea Submission (PPT Round) Widget */}
+                    <div className="rounded-2xl border-2 border-neon/50 bg-gradient-to-br from-neon/15 via-emerald-950/20 to-black p-4 shadow-glow-soft">
+                      <div className="flex items-center justify-between">
+                        <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/50 bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                          <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                          Round Live
+                        </span>
+                        <span className="text-[11px] text-muted-foreground font-mono">
+                          Dec 31, 2026
+                        </span>
+                      </div>
 
-                    {userRegRecord?.teamType === "team" && (
-                      <Button
-                        size="sm"
-                        onClick={() => setTeamModalOpen(true)}
-                        className="mt-2 w-full rounded-full bg-gradient-brand text-black font-extrabold text-xs shadow-glow hover:brightness-105"
-                      >
-                        <Users className="size-3.5 mr-1.5" />
-                        Manage Team Roster ({1 + (userRegRecord.teammates?.length || 0)}/4)
-                      </Button>
-                    )}
+                      <h3 className="mt-2 text-base font-black text-foreground tracking-tight">
+                        Idea Submission — PPT Round
+                      </h3>
+                      <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+                        Submit your team's proposed solution deck to qualify for the Grand Finale in Goa.
+                      </p>
+
+                      {userRegRecord?.teamType === "team" && (1 + (userRegRecord.teammates?.length || 0)) < 2 ? (
+                        <div className="mt-3 rounded-xl border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-300">
+                          <div className="flex items-center gap-1.5 font-bold">
+                            <Lock className="size-3.5 text-amber-400 shrink-0" />
+                            <span>Round 1 Locked (1/4 Members)</span>
+                          </div>
+                          <p className="mt-1 text-[11px] text-amber-200/90 leading-tight">
+                            At least 2 verified squad members are required to submit the PPT.
+                          </p>
+                          <Button
+                            size="sm"
+                            onClick={() => setTeamModalOpen(true)}
+                            className="mt-2.5 w-full rounded-lg bg-amber-500/25 text-amber-300 border border-amber-500/40 text-xs font-bold hover:bg-amber-500/40"
+                          >
+                            Share Team Code ({userRegRecord.teamCode || userRegRecord.id})
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="mt-3 space-y-2">
+                          <Button
+                            onClick={() => setIdeaModalOpen(true)}
+                            className="w-full rounded-xl bg-neon text-primary-foreground font-black text-xs sm:text-sm py-2.5 shadow-glow hover:brightness-105"
+                          >
+                            {userRegRecord?.submission?.pptUrl ? (
+                              <>
+                                <CheckCircle2 className="size-4 mr-1.5" />
+                                View / Edit PPT Submission
+                              </>
+                            ) : (
+                              <>
+                                <Sparkles className="size-4 mr-1.5" />
+                                Submit Idea / PPT Round 1 🚀
+                              </>
+                            )}
+                          </Button>
+
+                          {userRegRecord?.submission?.pptUrl && (
+                            <div className="flex items-center justify-between text-[11px] px-1 text-muted-foreground">
+                              <span className="text-emerald-400 font-bold truncate max-w-[190px]">
+                                ✓ {userRegRecord.submission.projectTitle}
+                              </span>
+                              <a
+                                href={userRegRecord.submission.pptUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-neon hover:underline font-semibold inline-flex items-center gap-1"
+                              >
+                                View Slides ↗
+                              </a>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Registration & Team Status Box */}
+                    <div className="rounded-2xl border border-border bg-card p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5 text-xs text-foreground font-semibold">
+                          <CheckCircle2 className="size-4 text-emerald-400" />
+                          <span>Registered as squad</span>
+                        </div>
+                        <span className="rounded-full bg-surface px-2 py-0.5 text-[10px] font-bold text-muted-foreground border border-border">
+                          {userRegRecord?.teamName || "Squad"} ({1 + (userRegRecord?.teammates?.length || 0)}/4)
+                        </span>
+                      </div>
+
+                      <div className="mt-3 grid grid-cols-2 gap-2">
+                        {userRegRecord?.teamType === "team" && (1 + (userRegRecord.teammates?.length || 0)) < 2 ? (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRegisterClick}
+                            className="w-full rounded-lg border-amber-500/50 text-[11px] font-bold text-amber-400 hover:bg-amber-500/15"
+                          >
+                            <Lock className="size-3 mr-1 text-amber-400" />
+                            Pass Locked
+                          </Button>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRegisterClick}
+                            className="w-full rounded-lg border-neon/50 text-[11px] font-bold text-neon hover:bg-neon hover:text-primary-foreground"
+                          >
+                            <Ticket className="size-3 mr-1" />
+                            Entry Pass
+                          </Button>
+                        )}
+
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={() => setTeamModalOpen(true)}
+                          className="w-full rounded-lg text-[11px] font-bold"
+                        >
+                          <Users className="size-3 mr-1" />
+                          Manage Team
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="mt-5 space-y-3">
@@ -1173,6 +1256,13 @@ function OpportunityDetails() {
         registration={userRegRecord}
         open={teamModalOpen}
         onOpenChange={setTeamModalOpen}
+      />
+
+      {/* Idea Submission (PPT Round) Modal */}
+      <IdeaSubmissionModal
+        registration={userRegRecord}
+        open={ideaModalOpen}
+        onOpenChange={setIdeaModalOpen}
       />
 
       {/* Mandatory Auth Gate for Unauthenticated Visitors */}
