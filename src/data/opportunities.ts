@@ -131,7 +131,7 @@ export const opportunities: Opportunity[] = [
     fee: "Free",
     status: "Registration open",
     registrationNote: "Idea Submission (PPT Round) deadline is 31 Dec 2026. Register on Vybe Driven to secure your official team slot.",
-    groupUrl: "https://chat.whatsapp.com/FTO9jg5AgW3CSZuA3PZVIU?s=cl&p=a&iam=2",
+    groupUrl: "https://chat.whatsapp.com/HXLGLzUJ6G2Hr1FL8RE7yW",
     groupLabel: "Join WhatsApp Community",
     contacts: [
       { name: "Goa Buildathon Desk", phone: "hello@goabuilds.com" },
@@ -139,7 +139,7 @@ export const opportunities: Opportunity[] = [
     ],
     relatedLinks: [
       { label: "Official Website (goabuilds.com)", url: "https://goabuilds.com/" },
-      { label: "Official WhatsApp Community", url: "https://chat.whatsapp.com/FTO9jg5AgW3CSZuA3PZVIU?s=cl&p=a&iam=2" },
+      { label: "Official WhatsApp Community", url: "https://chat.whatsapp.com/HXLGLzUJ6G2Hr1FL8RE7yW" },
       { label: "Instagram @goabuildathon27", url: "https://www.instagram.com/goabuildathon27" },
     ],
     overview: `GOA BUILDATHON ’27 is a 36-hour offline hackathon planned for January 2027 in Goa, India. It aims to bring together developers, designers, AI enthusiasts, problem-solvers and innovators from colleges and communities to turn ideas into working solutions.
@@ -180,7 +180,7 @@ Goa offers a distinctive setting for bringing people together to learn, collabor
 Official Channels & Contact:
 • Website: https://goabuilds.com/
 • Email: hello@goabuilds.com
-• WhatsApp: https://chat.whatsapp.com/FTO9jg5AgW3CSZuA3PZVIU
+• WhatsApp: https://chat.whatsapp.com/HXLGLzUJ6G2Hr1FL8RE7yW
 • Instagram: https://www.instagram.com/goabuildathon27
 • Platform & Technology Partner: Vybe Driven (vybedriven.in)
 

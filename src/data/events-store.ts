@@ -60,6 +60,7 @@ export type EventRegistration = {
   userType?: string;
   teamType: "solo" | "team";
   teamName?: string;
+  teamCode?: string;
   teamSize?: string;
   teamMembers?: string;
   teammates?: TeammateDetail[];
@@ -342,6 +343,7 @@ export function submitRegistration(data: {
   userType?: string;
   teamType: "solo" | "team";
   teamName?: string;
+  teamCode?: string;
   teamSize?: string;
   teamMembers?: string;
   teammates?: TeammateDetail[];
@@ -375,6 +377,7 @@ export function submitRegistration(data: {
   const newReg: EventRegistration = {
     ...data,
     id: newId,
+    teamCode: data.teamCode || newId,
     status: "Registered",
     createdAt: new Date().toISOString(),
   };
@@ -656,6 +659,134 @@ export function confirmTeammateInvitation(
   }
 
   return true;
+}
+
+// Find team by team code or registration id
+export function findTeamByCode(code: string): EventRegistration | null {
+  if (!code || typeof code !== "string") return null;
+  const clean = code.trim().toLowerCase();
+  const list = getStoredRegistrations();
+  return (
+    list.find(
+      (r) =>
+        r &&
+        r.teamType === "team" &&
+        ((r.id && r.id.trim().toLowerCase() === clean) ||
+          (r.teamCode && r.teamCode.trim().toLowerCase() === clean))
+    ) || null
+  );
+}
+
+// Join team with team code (creates verified member entry & updates roster)
+export function joinTeamWithCode(
+  teamCode: string,
+  memberData: {
+    userId?: string;
+    fullName: string;
+    email: string;
+    phone: string;
+    collegeOrCompany: string;
+    department?: string;
+    graduationYear?: string;
+  }
+): EventRegistration {
+  if (!teamCode || typeof teamCode !== "string") {
+    throw new Error("Please enter a valid Team Code.");
+  }
+  const cleanCode = teamCode.trim().toLowerCase();
+  const list = getStoredRegistrations();
+  const index = list.findIndex(
+    (r) =>
+      r &&
+      r.teamType === "team" &&
+      ((r.id && r.id.trim().toLowerCase() === cleanCode) ||
+        (r.teamCode && r.teamCode.trim().toLowerCase() === cleanCode))
+  );
+
+  if (index === -1) {
+    throw new Error("Team code not found. Please verify the code with your Team Leader and try again.");
+  }
+
+  const current = list[index];
+
+  // Check if opportunity is closed
+  const opp = findOpportunity(current.opportunitySlug);
+  if (opp && (opp.status === "Event full" || opp.status === "Sold out")) {
+    throw new Error("Registration for this hackathon is closed. Team roster has been locked.");
+  }
+
+  const existingTeammates = Array.isArray(current.teammates) ? [...current.teammates] : [];
+  const currentTotal = 1 + existingTeammates.length; // 1 Leader + teammates
+  if (currentTotal >= 4) {
+    throw new Error(`Team "${current.teamName || "Squad"}" is already full (maximum 4 members allowed).`);
+  }
+
+  const memberEmail = memberData.email.trim().toLowerCase();
+  if (current.email && current.email.trim().toLowerCase() === memberEmail) {
+    throw new Error("You are already the Team Leader of this team!");
+  }
+
+  const alreadyJoined = existingTeammates.some(
+    (t) =>
+      typeof t === "object" &&
+      t &&
+      typeof t.email === "string" &&
+      t.email.trim().toLowerCase() === memberEmail
+  );
+  if (alreadyJoined) {
+    throw new Error("You have already joined this team!");
+  }
+
+  const newMember: TeammateDetail = {
+    name: memberData.fullName.trim(),
+    email: memberEmail,
+    phone: memberData.phone.trim(),
+    collegeOrCompany: memberData.collegeOrCompany.trim(),
+    department: memberData.department?.trim() || undefined,
+    graduationYear: memberData.graduationYear?.trim() || undefined,
+    status: "verified",
+    role: "member",
+    confirmedAt: new Date().toISOString(),
+  };
+
+  const updatedTeammates = [...existingTeammates, newMember];
+  const teamSummary = updatedTeammates
+    .map((t) => `${(t.name || "Member").trim()} (${(t.email || "").trim()})`)
+    .join(", ");
+
+  const updatedTeam: EventRegistration = {
+    ...current,
+    teammates: updatedTeammates,
+    teamMembers: teamSummary,
+    teamSize: `${1 + updatedTeammates.length} members`,
+    updatedAt: new Date().toISOString(),
+  };
+
+  list[index] = updatedTeam;
+
+  if (typeof window !== "undefined") {
+    localStorage.setItem(STORAGE_REGISTRATIONS, JSON.stringify(list));
+    notifyStoreChange();
+
+    // Background sync to Supabase
+    import("@/integrations/supabase/client")
+      .then(({ supabase }) => {
+        supabase
+          .from("registrations" as any)
+          .update({
+            team_size: updatedTeam.teamSize,
+            team_members: updatedTeam.teamMembers,
+            teammates: updatedTeam.teammates,
+          })
+          .eq("id", updatedTeam.id)
+          .then(({ error }) => {
+            if (error) console.warn("[Database Sync] Team member join notice:", error.message);
+          });
+      })
+      .catch(() => {});
+  }
+
+  return updatedTeam;
 }
 
 // Update participant registration status

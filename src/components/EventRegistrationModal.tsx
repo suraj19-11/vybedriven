@@ -27,6 +27,8 @@ import {
   Mail,
   User,
   Lock,
+  Copy,
+  Share2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
@@ -34,6 +36,8 @@ import type { Opportunity } from "@/data/opportunities";
 import {
   submitRegistration,
   getRegistrationsBySlug,
+  findTeamByCode,
+  joinTeamWithCode,
   type EventRegistration,
   type TeammateDetail,
 } from "@/data/events-store";
@@ -44,6 +48,7 @@ interface EventRegistrationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess?: () => void;
+  initialJoinCode?: string;
 }
 
 const GENDERS = [
@@ -68,8 +73,16 @@ export function EventRegistrationModal({
   open,
   onOpenChange,
   onSuccess,
+  initialJoinCode,
 }: EventRegistrationModalProps) {
   const { user, profile } = useAuth();
+
+  // Mode: "create" (Leader creates team / solo) or "join" (Teammate joins with code)
+  const [regFlow, setRegFlow] = useState<"create" | "join">(() => (initialJoinCode ? "join" : "create"));
+  const [teamCodeInput, setTeamCodeInput] = useState(initialJoinCode || "");
+  const [matchedTeam, setMatchedTeam] = useState<EventRegistration | null>(null);
+  const [joinDept, setJoinDept] = useState("");
+  const [joinYear, setJoinYear] = useState("");
 
   // Wizard Step: 1 = Basic/User Details, 2 = Team Setup, 3 = Confirmation
   const [step, setStep] = useState<1 | 2 | 3>(1);
@@ -249,8 +262,26 @@ export function EventRegistrationModal({
   );
 
   useEffect(() => {
+    if (initialJoinCode) {
+      setRegFlow("join");
+      setTeamCodeInput(initialJoinCode);
+      const found = findTeamByCode(initialJoinCode);
+      setMatchedTeam(found);
+    }
+  }, [initialJoinCode, open]);
+
+  useEffect(() => {
+    if (teamCodeInput.trim().length >= 4) {
+      const found = findTeamByCode(teamCodeInput.trim());
+      setMatchedTeam(found);
+    } else {
+      setMatchedTeam(null);
+    }
+  }, [teamCodeInput]);
+
+  useEffect(() => {
     if (open) {
-      if (existingReg) {
+      if (existingReg && !initialJoinCode) {
         setConfirmedReg(existingReg);
         setStep(3);
       } else {
@@ -273,7 +304,89 @@ export function EventRegistrationModal({
         }
       }
     }
-  }, [open, user, profile, existingReg]);
+  }, [open, user, profile, existingReg, initialJoinCode]);
+
+  // Handle Join Team with Code
+  const handleJoinTeamSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!user) {
+      toast.error("Please sign in or create an account first.");
+      return;
+    }
+    if (!teamCodeInput.trim()) {
+      toast.error("Please enter a valid Team Code.");
+      return;
+    }
+    if (!firstName.trim()) {
+      toast.error("Please enter your First Name.");
+      return;
+    }
+    if (!phone.trim() || phone.replace(/[^\d]/g, "").length < 10) {
+      toast.error("Please enter a valid 10-digit mobile number.");
+      return;
+    }
+    if (!organization.trim()) {
+      toast.error("Please enter your College or Organization Name.");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const fullParticipantName = `${firstName.trim()} ${lastName.trim()}`.trim();
+      const updated = joinTeamWithCode(teamCodeInput.trim(), {
+        userId: user.id,
+        fullName: fullParticipantName,
+        email: user.email || email.trim().toLowerCase(),
+        phone: phone.trim(),
+        collegeOrCompany: organization.trim(),
+        department: joinDept.trim() || undefined,
+        graduationYear: joinYear.trim() || undefined,
+      });
+
+      setConfirmedReg(updated);
+      setStep(3);
+      toast.success(`🎉 You've officially joined Team "${updated.teamName || "Squad"}"!`);
+      onSuccess?.();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to join team.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const teamCode = confirmedReg?.teamCode || confirmedReg?.id || "";
+
+  const handleCopyTeamCode = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(teamCode);
+      toast.success(`📋 Team Code "${teamCode}" copied to clipboard!`);
+    } else {
+      toast.info(teamCode);
+    }
+  };
+
+  const handleCopyTeamInviteLink = () => {
+    const base = typeof window !== "undefined" ? window.location.origin : "https://www.vybedriven.in";
+    const link = `${base}/opportunities/${opportunity.slug}?joinCode=${encodeURIComponent(teamCode)}`;
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(link);
+      toast.success("🔗 Team invite link copied to clipboard!");
+    } else {
+      toast.info(link);
+    }
+  };
+
+  const handleShareTeamWhatsApp = () => {
+    const base = typeof window !== "undefined" ? window.location.origin : "https://www.vybedriven.in";
+    const link = `${base}/opportunities/${opportunity.slug}?joinCode=${encodeURIComponent(teamCode)}`;
+    const msg = encodeURIComponent(
+      `🚀 Join my team "${confirmedReg?.teamName || "Squad"}" for ${opportunity.title} on Vybe Driven!\n\n` +
+      `🔑 Official Team Code: ${teamCode}\n\n` +
+      `🔗 Click link to join directly: ${link}\n\n` +
+      `Simply create your account, enter our Team Code, and you'll instantly get your official verified pass! 🎟️`
+    );
+    window.open(`https://api.whatsapp.com/send?text=${msg}`, "_blank");
+  };
 
   // Handle Step 1 Validation & Proceed
   const handleProceedToTeam = (e: FormEvent) => {
@@ -955,9 +1068,189 @@ Platform Support: vybedriven@gmail.com
           </div>
         ) : null}
 
-        {/* STEP 1: BASIC & USER DETAILS */}
+        {/* STEP 1: BASIC & USER DETAILS OR JOIN WITH CODE */}
         {user && step === 1 && (
-          <form onSubmit={handleProceedToTeam} className="mt-4 space-y-5 text-xs sm:text-sm">
+          <div className="mt-4 space-y-4 text-xs sm:text-sm">
+            {/* Registration Mode Switcher */}
+            <div className="grid grid-cols-2 gap-2 rounded-2xl border border-border bg-surface p-1.5">
+              <button
+                type="button"
+                onClick={() => setRegFlow("create")}
+                className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-extrabold transition cursor-pointer ${
+                  regFlow === "create"
+                    ? "bg-neon text-black shadow-glow-soft"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <UserPlus className="size-3.5" />
+                <span>Create Team / Solo</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setRegFlow("join")}
+                className={`flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-extrabold transition cursor-pointer ${
+                  regFlow === "join"
+                    ? "bg-neon text-black shadow-glow-soft"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Users className="size-3.5" />
+                <span>Join Team with Code 🤝</span>
+              </button>
+            </div>
+
+            {regFlow === "join" ? (
+              /* JOIN EXISTING TEAM WITH CODE FORM */
+              <form onSubmit={handleJoinTeamSubmit} className="space-y-4 pt-1">
+                <div className="rounded-2xl border border-neon/40 bg-neon/5 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-neon font-bold text-xs uppercase tracking-wider">
+                    <Sparkles className="size-4" /> Join Team via Code
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Enter your Team Leader's Team Code below. Once submitted, your profile will immediately join their team roster with a verified pass!
+                  </p>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                      Team Code <span className="text-neon">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={teamCodeInput}
+                      onChange={(e) => setTeamCodeInput(e.target.value.toUpperCase())}
+                      placeholder="e.g. GB27-82035"
+                      className="w-full rounded-xl border border-neon/50 bg-background px-3.5 py-2.5 font-mono text-sm uppercase text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon"
+                    />
+                  </div>
+
+                  {matchedTeam ? (
+                    <div className="rounded-xl border border-emerald-500/50 bg-emerald-950/40 p-3 text-xs text-emerald-300 space-y-1">
+                      <div className="flex items-center justify-between font-bold">
+                        <span>✅ Team Found: {matchedTeam.teamName}</span>
+                        <span className="font-mono">{1 + (matchedTeam.teammates?.length || 0)}/4 Members</span>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Leader: {matchedTeam.fullName} · {matchedTeam.collegeOrCompany}
+                      </p>
+                    </div>
+                  ) : teamCodeInput.trim().length >= 4 ? (
+                    <p className="text-[11px] text-amber-400">
+                      Searching team code... Please verify the code with your Team Leader.
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                      First Name <span className="text-neon">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      placeholder="Enter first name"
+                      className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                      Last Name
+                    </label>
+                    <input
+                      type="text"
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      placeholder="Enter last name"
+                      className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                      Email Address <span className="text-neon">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={email || user?.email || ""}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="yourname@gmail.com"
+                      className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                      Mobile Number <span className="text-neon">*</span>
+                    </label>
+                    <div className="flex items-center rounded-xl border border-border bg-surface overflow-hidden">
+                      <span className="flex items-center gap-1 bg-surface-2 px-3 py-2.5 text-xs font-bold text-foreground border-r border-border shrink-0 select-none">
+                        🇮🇳 +91
+                      </span>
+                      <input
+                        type="tel"
+                        required
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="10-digit number"
+                        className="w-full bg-transparent px-3 py-2.5 text-xs sm:text-sm text-foreground outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                      College / Organization <span className="text-neon">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={organization}
+                      onChange={(e) => setOrganization(e.target.value)}
+                      placeholder="Your college or organization"
+                      className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-foreground/90 mb-1">
+                      Branch / Department
+                    </label>
+                    <input
+                      type="text"
+                      value={joinDept}
+                      onChange={(e) => setJoinDept(e.target.value)}
+                      placeholder="e.g. Computer Engineering"
+                      className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-border/70">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => onOpenChange(false)}
+                    className="rounded-full text-xs text-muted-foreground hover:text-foreground"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={submitting || !matchedTeam}
+                    className="rounded-full bg-gradient-brand text-primary-foreground font-bold px-7 shadow-glow hover:brightness-110"
+                  >
+                    {submitting ? "Joining..." : "Join Team & Get Pass 🚀"}
+                  </Button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleProceedToTeam} className="space-y-5">
             <div>
               <h3 className="text-sm sm:text-base font-bold text-foreground flex items-center gap-2">
                 <User className="size-4 text-neon" /> Basic Details
@@ -1174,6 +1467,8 @@ Platform Support: vybedriven@gmail.com
             </div>
           </form>
         )}
+      </div>
+    )}
 
         {/* STEP 2: TEAM SETUP & SQUAD FORMATION */}
         {user && step === 2 && (
@@ -1246,19 +1541,17 @@ Platform Support: vybedriven@gmail.com
                   />
                 </div>
 
-                {/* Teammates Header with Counter */}
+                {/* Teammates Header */}
                 <div className="flex items-center justify-between border-b border-border/60 pb-2">
                   <div className="flex items-center gap-2">
                     <Users className="size-4 text-neon" />
                     <span className="font-bold text-foreground">
-                      Teammates ({1 + teammates.length}/4)
+                      Team Roster Formation
                     </span>
                   </div>
-                  {teammates.length < 1 && (
-                    <span className="text-[11px] font-semibold text-amber-400">
-                      Add at least 1 more member to complete the team
-                    </span>
-                  )}
+                  <span className="rounded-full bg-neon/15 px-2.5 py-0.5 text-[11px] font-bold text-neon">
+                    Team Code Instant Joining
+                  </span>
                 </div>
 
                 {/* Leader Card (Member 1) */}
@@ -1281,85 +1574,21 @@ Platform Support: vybedriven@gmail.com
                   </span>
                 </div>
 
-                {/* Additional Teammates */}
-                {teammates.map((tm, idx) => (
-                  <div
-                    key={idx}
-                    className="rounded-xl border border-border bg-surface/70 p-3.5 space-y-2.5"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-neon">
-                        Member #{idx + 2} Details
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveTeammate(idx)}
-                        className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1"
-                      >
-                        <Trash2 className="size-3.5" /> Remove
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      <input
-                        type="text"
-                        required
-                        value={tm.name}
-                        onChange={(e) => handleUpdateTeammate(idx, "name", e.target.value)}
-                        placeholder="Member full name *"
-                        className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
-                      />
-                      <input
-                        type="email"
-                        required
-                        value={tm.email}
-                        onChange={(e) => handleUpdateTeammate(idx, "email", e.target.value)}
-                        placeholder="Member email address *"
-                        className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
-                      />
-                      <input
-                        type="tel"
-                        value={tm.phone || ""}
-                        onChange={(e) => handleUpdateTeammate(idx, "phone", e.target.value)}
-                        placeholder="10-digit mobile number"
-                        className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
-                      />
-                      <input
-                        type="text"
-                        value={tm.collegeOrCompany || ""}
-                        onChange={(e) => handleUpdateTeammate(idx, "collegeOrCompany", e.target.value)}
-                        placeholder="College / Company"
-                        className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
-                      />
-                      <input
-                        type="text"
-                        value={tm.department || ""}
-                        onChange={(e) => handleUpdateTeammate(idx, "department", e.target.value)}
-                        placeholder="Department / Branch (e.g. CS, IT)"
-                        className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
-                      />
-                      <input
-                        type="text"
-                        value={tm.graduationYear || ""}
-                        onChange={(e) => handleUpdateTeammate(idx, "graduationYear", e.target.value)}
-                        placeholder="Graduation Year (e.g. 2026)"
-                        className="rounded-lg border border-border bg-background px-3 py-2 text-xs text-foreground outline-none focus:border-neon"
-                      />
-                    </div>
+                {/* Team Code Explanatory Card */}
+                <div className="rounded-xl border border-neon/30 bg-gradient-to-br from-neon/10 via-surface to-surface p-4 text-xs space-y-2">
+                  <div className="flex items-center gap-2 font-bold text-neon">
+                    <Sparkles className="size-4" />
+                    <span>How Teammates Will Join Your Team</span>
                   </div>
-                ))}
-
-                {/* Add Member Button */}
-                {teammates.length < 3 && (
-                  <button
-                    type="button"
-                    onClick={handleAddTeammate}
-                    className="w-full rounded-xl border border-dashed border-neon/50 bg-neon/5 py-3 text-xs font-bold text-neon transition hover:bg-neon/15 flex items-center justify-center gap-2"
-                  >
-                    <UserPlus className="size-4" />
-                    + Add {teammates.length === 0 ? "2nd" : teammates.length === 1 ? "3rd" : "4th"} Member
-                  </button>
-                )}
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    Once you submit your registration, your team will get a unique <strong>Team Code</strong> &amp; <strong>Invite Link</strong>.
+                  </p>
+                  <ul className="text-[11px] text-muted-foreground list-disc pl-4 space-y-1">
+                    <li>Share the Team Code on WhatsApp with your friends.</li>
+                    <li>They will open Vybe Driven, click <strong className="text-foreground">"Join Team with Code"</strong>, and enter your code.</li>
+                    <li>They will instantly get their verified entry pass and appear on your official roster — zero email verification hassle!</li>
+                  </ul>
+                </div>
 
                 {/* Looking for Teammates Switch */}
                 <div className="flex items-center justify-between rounded-xl border border-border bg-surface p-3 mt-3">
@@ -1426,6 +1655,56 @@ Platform Support: vybedriven@gmail.com
                 Thank you for registering for {opportunity.title}. Your spot has been officially recorded in the builder database.
               </p>
             </div>
+
+            {/* If Team registration, show Team Code & Share Invite */}
+            {confirmedReg.teamType === "team" && (
+              <div className="rounded-2xl border-2 border-neon/50 bg-gradient-to-br from-neon/15 via-surface-2 to-surface p-4 sm:p-5 text-left space-y-3.5 shadow-glow-soft">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <Users className="size-4 sm:size-5 text-neon" />
+                    <span className="font-extrabold text-xs sm:text-sm uppercase tracking-wider text-neon">
+                      Official Team Code &amp; Teammate Invite
+                    </span>
+                  </div>
+                  <span className="text-[11px] sm:text-xs font-bold text-muted-foreground truncate">
+                    Squad: <span className="text-foreground">{confirmedReg.teamName}</span>
+                  </span>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 rounded-xl border border-neon/30 bg-black/50 p-3.5">
+                  <div>
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground block">
+                      Team Code (Share with your friends)
+                    </span>
+                    <span className="font-mono text-xl sm:text-2xl font-black tracking-widest text-neon select-all">
+                      {confirmedReg.teamCode || confirmedReg.id}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleCopyTeamCode}
+                      className="rounded-lg bg-neon/15 text-neon border border-neon/30 hover:bg-neon/25 text-xs font-bold"
+                    >
+                      <Copy className="size-3.5 mr-1" /> Copy Code
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleShareTeamWhatsApp}
+                      className="rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 hover:bg-emerald-500/30 text-xs font-bold"
+                    >
+                      <Share2 className="size-3.5 mr-1" /> WhatsApp Invite
+                    </Button>
+                  </div>
+                </div>
+
+                <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
+                  💡 Teammates simply visit Vybe Driven, click <strong className="text-foreground">&quot;Join Team with Code&quot;</strong>, enter this code, and they&apos;ll instantly get verified on your roster and receive their official pass!
+                </p>
+              </div>
+            )}
 
             {/* Official Pass Card */}
             <div className="rounded-2xl border-2 border-neon/40 bg-surface-2/80 p-5 text-left shadow-glow-soft space-y-4">
@@ -1509,9 +1788,14 @@ Platform Support: vybedriven@gmail.com
                 <Calendar className="size-3.5 text-neon" /> Add to Calendar
               </a>
 
-              {opportunity.groupUrl && (
+              {/* WhatsApp Community Link - Goa Buildathon dedicated link */}
+              {((opportunity.slug === "goa-buildathon-2027") || opportunity.groupUrl) && (
                 <a
-                  href={opportunity.groupUrl}
+                  href={
+                    opportunity.slug === "goa-buildathon-2027"
+                      ? "https://chat.whatsapp.com/HXLGLzUJ6G2Hr1FL8RE7yW"
+                      : (opportunity.groupUrl || "https://chat.whatsapp.com/FTO9jg5AgW3CSZuA3PZVIU?s=cl&p=a&iam=2")
+                  }
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full sm:w-auto inline-flex items-center justify-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs font-bold text-emerald-400 transition hover:bg-emerald-500/20"

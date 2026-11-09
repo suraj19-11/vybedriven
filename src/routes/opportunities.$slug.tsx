@@ -43,11 +43,17 @@ import { EventRegistrationModal } from "@/components/EventRegistrationModal";
 import { TeamManagementModal } from "@/components/TeamManagementModal";
 import { isUserRegistered, getRegistrationCount, useEventRegistrations, isEventOrganizer, type EventRegistration } from "@/data/events-store";
 
-type OpportunitySearch = { register?: string };
+type OpportunitySearch = {
+  register?: string;
+  joinCode?: string;
+  joinTeam?: string;
+};
 
 export const Route = createFileRoute("/opportunities/$slug")({
   validateSearch: (search: Record<string, unknown>): OpportunitySearch => ({
     register: typeof search["register"] === "string" ? search["register"] : undefined,
+    joinCode: typeof search["joinCode"] === "string" ? search["joinCode"] : undefined,
+    joinTeam: typeof search["joinTeam"] === "string" ? search["joinTeam"] : undefined,
   }),
   loader: ({ params }) => {
     const opportunity = getOpportunity(params.slug);
@@ -516,21 +522,23 @@ function OpportunityDetails() {
   const [exploreGateOpen, setExploreGateOpen] = useState(false);
   const [teamModalOpen, setTeamModalOpen] = useState(false);
 
+  const incomingJoinCode = search.joinCode || search.joinTeam;
+
   // Mandatory Auth Gate: if visitor is not logged in, prompt them to sign in or create account
   useEffect(() => {
-    if (!loading && !user && search.register !== "1") {
+    if (!loading && !user && search.register !== "1" && !incomingJoinCode) {
       setExploreGateOpen(true);
     } else {
       setExploreGateOpen(false);
     }
-  }, [user, loading, search.register]);
+  }, [user, loading, search.register, incomingJoinCode]);
 
-  // Auto-open modal if requested via ?register=1
+  // Auto-open modal if requested via ?register=1 or ?joinCode=...
   useEffect(() => {
-    if (search.register === "1") {
+    if (search.register === "1" || incomingJoinCode) {
       setRegModalOpen(true);
     }
-  }, [search.register]);
+  }, [search.register, incomingJoinCode]);
 
   const handleRegisterClick = () => {
     setRegModalOpen(true);
@@ -1146,6 +1154,7 @@ function OpportunityDetails() {
         opportunity={item}
         open={regModalOpen}
         onOpenChange={setRegModalOpen}
+        initialJoinCode={incomingJoinCode}
       />
 
       {/* Team Management Modal */}

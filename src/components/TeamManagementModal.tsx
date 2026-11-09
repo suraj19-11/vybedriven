@@ -181,6 +181,43 @@ export function TeamManagementModal({
     toast.info(`${memberName} removed from list. Remember to save changes.`);
   };
 
+  const teamCode = registration.teamCode || registration.id;
+
+  const getTeamInviteLink = () => {
+    const base = typeof window !== "undefined" ? window.location.origin : "https://www.vybedriven.in";
+    return `${base}/opportunities/${registration.opportunitySlug}?joinCode=${encodeURIComponent(teamCode)}`;
+  };
+
+  const handleCopyTeamCode = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(teamCode);
+      toast.success(`📋 Team Code "${teamCode}" copied to clipboard!`);
+    } else {
+      toast.info(teamCode);
+    }
+  };
+
+  const handleCopyTeamInviteLink = () => {
+    const link = getTeamInviteLink();
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(link);
+      toast.success("🔗 Team invite link copied to clipboard!");
+    } else {
+      toast.info(link);
+    }
+  };
+
+  const handleShareTeamOnWhatsApp = () => {
+    const link = getTeamInviteLink();
+    const msg = encodeURIComponent(
+      `🚀 Join my team "${teamName}" for ${registration.opportunityTitle} on Vybe Driven!\n\n` +
+      `🔑 Official Team Code: ${teamCode}\n\n` +
+      `🔗 Click link to join directly: ${link}\n\n` +
+      `Simply sign in, enter our Team Code, and you'll instantly get your verified participant pass! 🎟️`
+    );
+    window.open(`https://api.whatsapp.com/send?text=${msg}`, "_blank");
+  };
+
   // Generate Invite Link & Mailto
   const getInviteLink = (memberEmail: string) => {
     const base = typeof window !== "undefined" ? window.location.origin : "https://www.vybedriven.in";
@@ -346,6 +383,53 @@ export function TeamManagementModal({
                   />
                 </label>
               )}
+            </div>
+          </div>
+
+          {/* Team Code & Direct Share Box */}
+          <div className="rounded-2xl border-2 border-neon/40 bg-gradient-to-br from-neon/15 via-emerald-950/30 to-black p-4 sm:p-5 shadow-glow-soft">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <span className="text-[11px] font-black uppercase tracking-wider text-neon flex items-center gap-1.5">
+                  <Sparkles className="size-3.5" /> Official Team Code
+                </span>
+                <div className="mt-1.5 flex items-center gap-2.5">
+                  <span className="font-mono text-2xl sm:text-3xl font-black text-foreground tracking-wider bg-black/60 px-4 py-1 rounded-xl border border-neon/50 shadow-inner">
+                    {teamCode}
+                  </span>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleCopyTeamCode}
+                    className="rounded-full bg-neon text-black font-extrabold text-xs shadow-glow hover:brightness-110"
+                  >
+                    <Copy className="size-3.5 mr-1" /> Copy Code
+                  </Button>
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Give this code to your teammates. When they click "Register" and choose <strong className="text-foreground">"Join Team with Code"</strong>, they will instantly appear in your roster as verified members!
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-2 shrink-0">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleCopyTeamInviteLink}
+                  className="rounded-full border-neon/40 text-xs font-bold text-neon hover:bg-neon hover:text-black"
+                >
+                  <Copy className="size-3.5 mr-1.5" /> Copy Invite Link
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={handleShareTeamOnWhatsApp}
+                  className="rounded-full bg-[#25D366] text-white font-extrabold text-xs hover:brightness-110 shadow-sm"
+                >
+                  <MessageCircle className="size-3.5 mr-1.5" /> Share on WhatsApp
+                </Button>
+              </div>
             </div>
           </div>
 
