@@ -25,6 +25,7 @@ import {
   ExternalLink,
   ShieldCheck,
   AlertCircle,
+  MessageCircle,
   X,
 } from "lucide-react";
 import {
