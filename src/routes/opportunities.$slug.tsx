@@ -650,9 +650,9 @@ function OpportunityDetails() {
                     <Sparkles className="size-3" /> Community Hosted
                   </span>
                 )}
-                {regCount > 0 && (
+                {(item.slug === "goa-buildathon-2027" || regCount > 0) && (
                   <span className="inline-flex items-center gap-1 rounded-full border border-border bg-card px-2.5 py-1 text-xs font-medium text-muted-foreground">
-                    <Users className="size-3 text-neon" /> {regCount} {regCount === 1 ? "applicant" : "applicants"}
+                    <Users className="size-3 text-neon" /> {item.slug === "goa-buildathon-2027" ? "2,000+ Registrations" : `${regCount} ${regCount === 1 ? "applicant" : "applicants"}`}
                   </span>
                 )}
               </div>
@@ -1008,11 +1008,9 @@ function OpportunityDetails() {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                     Registration
                   </p>
-                  {regCount > 0 && (
-                    <span className="text-xs font-semibold text-neon font-mono">
-                      {regCount} {regCount === 1 ? "applicant" : "applicants"}
-                    </span>
-                  )}
+                  <span className="text-xs font-semibold text-neon font-mono">
+                    {item.slug === "goa-buildathon-2027" ? "2,000+ Registrations" : `${regCount} ${regCount === 1 ? "applicant" : "applicants"}`}
+                  </span>
                 </div>
 
                 <h2 className="mt-2 text-lg sm:text-xl font-bold">
