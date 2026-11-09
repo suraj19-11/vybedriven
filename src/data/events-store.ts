@@ -109,19 +109,37 @@ export function getStoredHostedEvents(): HostedEvent[] {
   }
 }
 
+export const EXCLUDED_TEST_IDS = [
+  "GB27-TEST-9019",
+  "GB27-45653",
+  "GB27-82035",
+  "GB27-37406",
+];
+
+export const GOA_BUILDATHON_ORGANIZER_EMAILS = [
+  "kartikkvats@gmail.com",
+  "goabuildathon@gmail.com",
+  "harshhdhankhar@gmail.com",
+  "hello@goabuilds.com",
+];
+
 // Helper to safely get stored registrations
 export function getStoredRegistrations(): EventRegistration[] {
-  if (typeof window === "undefined") return SEED_REGISTRATIONS;
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(STORAGE_REGISTRATIONS);
     if (!raw) {
-      localStorage.setItem(STORAGE_REGISTRATIONS, JSON.stringify(SEED_REGISTRATIONS));
-      return SEED_REGISTRATIONS;
+      localStorage.setItem(STORAGE_REGISTRATIONS, JSON.stringify([]));
+      return [];
     }
-    return JSON.parse(raw) as EventRegistration[];
+    const list = JSON.parse(raw) as EventRegistration[];
+    if (!Array.isArray(list)) return [];
+    return list.filter(
+      (r) => r && r.status !== "deleted" && !EXCLUDED_TEST_IDS.includes(r.id)
+    );
   } catch (error) {
     console.error("Failed to parse registrations:", error);
-    return SEED_REGISTRATIONS;
+    return [];
   }
 }
 
@@ -264,9 +282,16 @@ export function isEventOrganizer(
   // Platform admins can manage all events and view registrations
   if (uEmail && ADMIN_EMAILS.includes(uEmail)) return true;
 
-  // Specific check for Goa Buildathon 2027
+  // Specific check for Goa Buildathon 2027 (Authorized organizer emails)
   if (event.slug === "goa-buildathon-2027") {
-    if (uEmail && (ADMIN_EMAILS.includes(uEmail) || uEmail.includes("goabuilds"))) return true;
+    if (
+      uEmail &&
+      (ADMIN_EMAILS.includes(uEmail) ||
+        uEmail.includes("goabuilds") ||
+        GOA_BUILDATHON_ORGANIZER_EMAILS.includes(uEmail))
+    ) {
+      return true;
+    }
   }
 
   const orgId = hosted.organizerId?.trim();
@@ -450,6 +475,10 @@ export function mergeRemoteRegistrations(remoteRows: any[]): void {
 
   // Overlay remote records from Supabase
   for (const row of remoteRows) {
+    if (row.status === "deleted" || EXCLUDED_TEST_IDS.includes(row.id)) {
+      map.delete(row.id);
+      continue;
+    }
     const parsed: EventRegistration = {
       id: row.id,
       opportunitySlug: row.opportunity_slug,
@@ -1004,24 +1033,34 @@ export function useOpportunities() {
 
 function getOrganizerEvents(userId?: string, userEmail?: string | null): HostedEvent[] {
   if (!userId && !userEmail) return [];
-  const stored = getStoredHostedEvents().filter((e) =>
-    isEventOrganizer(e, { id: userId, email: userEmail })
-  );
+  const uEmail = userEmail?.toLowerCase().trim();
+  const isGoaOrganizer = Boolean(uEmail && GOA_BUILDATHON_ORGANIZER_EMAILS.includes(uEmail));
+  const isAdmin = isPlatformAdmin({ id: userId, email: userEmail });
 
-  // Platform admins & Goa organizers get Goa Buildathon 2027 in their management portal
-  if (isPlatformAdmin({ id: userId, email: userEmail })) {
-    const goa = findOpportunity("goa-buildathon-2027");
-    if (goa && !stored.some((e) => e.slug === "goa-buildathon-2027")) {
-      const hostedGoa: HostedEvent = {
+  const goa = findOpportunity("goa-buildathon-2027");
+  const hostedGoa: HostedEvent | null = goa
+    ? {
         ...goa,
-        organizerId: userId || "admin",
+        organizerId: userId || "goa-organizer",
         organizerEmail: userEmail || "hello@goabuilds.com",
         isHosted: true,
         createdAt: "2026-11-08T00:00:00.000Z",
         registrationType: "direct",
-      };
-      return [hostedGoa, ...stored];
-    }
+      }
+    : null;
+
+  // Specific restriction: Goa Buildathon organizers who are not platform admins get ONLY Goa Buildathon
+  if (isGoaOrganizer && !isAdmin) {
+    return hostedGoa ? [hostedGoa] : [];
+  }
+
+  const stored = getStoredHostedEvents().filter((e) =>
+    isEventOrganizer(e, { id: userId, email: userEmail })
+  );
+
+  // Platform admins get Goa Buildathon prepended if not already stored
+  if (isAdmin && hostedGoa && !stored.some((e) => e.slug === "goa-buildathon-2027")) {
+    return [hostedGoa, ...stored];
   }
   return stored;
 }
@@ -1070,7 +1109,21 @@ export function useEventRegistrations(slug: string) {
             .then(({ data, error }) => {
               if (!active || error || !data || !Array.isArray(data)) return;
               mergeRemoteRegistrations(data);
-              setList(getRegistrationsBySlug(slug));
+              const next = getRegistrationsBySlug(slug);
+              setList((prev) => {
+                if (
+                  prev.length === next.length &&
+                  prev.every(
+                    (p, i) =>
+                      p.id === next[i]?.id &&
+                      p.updatedAt === next[i]?.updatedAt &&
+                      (p.teammates?.length || 0) === (next[i]?.teammates?.length || 0)
+                  )
+                ) {
+                  return prev;
+                }
+                return next;
+              });
             })
             .catch(() => {});
         })

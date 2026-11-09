@@ -395,7 +395,7 @@ export function TeamManagementModal({
               )}
             </div>
 
-            {/* Teammates Counter & Looking for teammates toggle */}
+            {/* Teammates Counter */}
             <div className="flex flex-wrap items-center gap-3">
               <div className="rounded-xl border border-border bg-surface px-3 py-1.5 text-xs font-semibold">
                 <span className="text-muted-foreground">Teammates: </span>
@@ -403,18 +403,6 @@ export function TeamManagementModal({
                   ({totalMembers}/{maxMembers})
                 </span>
               </div>
-
-              {canManageTeam && (
-                <label className="flex items-center gap-2 cursor-pointer text-xs font-medium text-muted-foreground select-none">
-                  <span>Looking for teammates:</span>
-                  <input
-                    type="checkbox"
-                    checked={lookingForTeammates}
-                    onChange={(e) => setLookingForTeammates(e.target.checked)}
-                    className="size-4 accent-neon rounded cursor-pointer"
-                  />
-                </label>
-              )}
             </div>
           </div>
 

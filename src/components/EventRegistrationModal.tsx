@@ -299,31 +299,31 @@ export function EventRegistrationModal({
   }, [teamCodeInput]);
 
   useEffect(() => {
-    if (open) {
-      if (existingReg && !initialJoinCode) {
-        setConfirmedReg(existingReg);
-        setStep(3);
-      } else {
-        setConfirmedReg(null);
-        setStep(1);
+    if (!open) return;
+    if (existingReg && !initialJoinCode) {
+      setConfirmedReg(existingReg);
+      setStep(3);
+    } else {
+      setConfirmedReg(null);
+      setStep(1);
 
-        // Pre-fill from logged-in builder profile
-        if (profile) {
-          const names = (profile.display_name || user?.user_metadata?.["full_name"] || "").trim().split(" ");
-          setFirstName(names[0] || "");
-          setLastName(names.slice(1).join(" ") || "");
-          setEmail(user?.email || "");
-          setOrganization(profile.college_or_company || "");
-          setLocation(profile.location || "");
-        } else if (user) {
-          const names = (user.user_metadata?.["full_name"] || user.email?.split("@")[0] || "").trim().split(" ");
-          setFirstName(names[0] || "");
-          setLastName(names.slice(1).join(" ") || "");
-          setEmail(user.email || "");
-        }
+      // Pre-fill from logged-in builder profile only once on initial open
+      if (profile) {
+        const names = (profile.display_name || user?.user_metadata?.["full_name"] || "").trim().split(" ");
+        setFirstName(names[0] || "");
+        setLastName(names.slice(1).join(" ") || "");
+        setEmail(user?.email || "");
+        setOrganization(profile.college_or_company || "");
+        setLocation(profile.location || "");
+      } else if (user) {
+        const names = (user.user_metadata?.["full_name"] || user.email?.split("@")[0] || "").trim().split(" ");
+        setFirstName(names[0] || "");
+        setLastName(names.slice(1).join(" ") || "");
+        setEmail(user.email || "");
       }
     }
-  }, [open, user, profile, existingReg, initialJoinCode]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   // Handle Join Team with Code
   const handleJoinTeamSubmit = async (e: FormEvent) => {
@@ -1222,7 +1222,7 @@ Platform Support: vybedriven@gmail.com
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-3">
                   <div>
                     <label className="block text-xs font-semibold text-foreground/90 mb-1">
                       College / Organization <span className="text-neon">*</span>
@@ -1233,7 +1233,7 @@ Platform Support: vybedriven@gmail.com
                       value={organization}
                       onChange={(e) => setOrganization(e.target.value)}
                       placeholder="Your college or organization"
-                      className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
+                      className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon"
                     />
                   </div>
                   <div>
@@ -1245,7 +1245,7 @@ Platform Support: vybedriven@gmail.com
                       value={joinDept}
                       onChange={(e) => setJoinDept(e.target.value)}
                       placeholder="e.g. Computer Engineering"
-                      className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon"
+                      className="w-full rounded-xl border border-border bg-surface px-3.5 py-2.5 text-xs sm:text-sm text-foreground outline-none focus:border-neon focus:ring-1 focus:ring-neon"
                     />
                   </div>
                 </div>
@@ -1608,22 +1608,6 @@ Platform Support: vybedriven@gmail.com
                     <li>They will instantly get their verified entry pass and appear on your official roster — zero email verification hassle!</li>
                   </ul>
                 </div>
-
-                {/* Looking for Teammates Switch */}
-                <div className="flex items-center justify-between rounded-xl border border-border bg-surface p-3 mt-3">
-                  <div>
-                    <p className="text-xs font-bold text-foreground">Looking for More Teammates?</p>
-                    <p className="text-[11px] text-muted-foreground">
-                      Allow other ambitious builders on Vybe Driven to request to join your squad.
-                    </p>
-                  </div>
-                  <input
-                    type="checkbox"
-                    checked={lookingForTeammates}
-                    onChange={(e) => setLookingForTeammates(e.target.checked)}
-                    className="size-5 rounded border-border text-neon focus:ring-neon cursor-pointer"
-                  />
-                </div>
               </div>
             ) : (
               /* JOIN TEAM / SOLO INFO */
@@ -1686,7 +1670,7 @@ Platform Support: vybedriven@gmail.com
                     </span>
                   </div>
                   <span className="text-[11px] sm:text-xs font-bold text-muted-foreground truncate">
-                    Squad: <span className="text-foreground">{confirmedReg.teamName}</span>
+                    Squad: <span className="text-foreground">{confirmedReg.teamName}</span> ({1 + (confirmedReg.teammates?.length || 0)}/4)
                   </span>
                 </div>
 
@@ -1720,81 +1704,105 @@ Platform Support: vybedriven@gmail.com
                 </div>
 
                 <p className="text-[11px] sm:text-xs text-muted-foreground leading-relaxed">
-                  💡 Teammates simply visit Vybe Driven, click <strong className="text-foreground">&quot;Join Team with Code&quot;</strong>, enter this code, and they&apos;ll instantly get verified on your roster and receive their official pass!
+                  💡 Teammates simply visit Vybe Driven, click <strong className="text-foreground">&quot;Join Team with Code&quot;</strong>, enter this code, and they&apos;ll instantly get verified on your roster and unlock their official entry pass!
                 </p>
               </div>
             )}
 
-            {/* Official Pass Card */}
-            <div className="rounded-2xl border-2 border-neon/40 bg-surface-2/80 p-5 text-left shadow-glow-soft space-y-4">
-              <div className="flex items-start justify-between gap-3 border-b border-border/70 pb-3">
-                <div className="flex items-center gap-3">
-                  <div className="size-12 rounded-xl bg-black/60 border border-border flex items-center justify-center overflow-hidden shrink-0">
-                    <img src={opportunity.image} alt="" className="h-full w-full object-cover" />
+            {/* Pass Lock Notice when team has fewer than 2 members */}
+            {confirmedReg.teamType === "team" && (1 + (confirmedReg.teammates?.length || 0)) < 2 && (
+              <div className="rounded-2xl border-2 border-amber-500/50 bg-gradient-to-r from-amber-500/15 via-black to-amber-950/20 p-4 sm:p-5 text-left space-y-2 shadow-glow-soft">
+                <div className="flex items-center gap-2 text-amber-400 font-extrabold text-sm sm:text-base">
+                  <Lock className="size-5 shrink-0" />
+                  <span>Entry Pass Locked — Minimum 2 Members Required</span>
+                </div>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Your squad currently has <strong>1 member</strong> ({confirmedReg.fullName}). For the offline hackathon, a team must have <strong>at least 2 members</strong> (and up to 4).
+                  Your official scannable entry pass and QR barcode will <strong>automatically unlock</strong> as soon as your teammate joins using your Team Code!
+                </p>
+              </div>
+            )}
+
+            {/* Official Pass Card (Only fully shown when unlocked) */}
+            {confirmedReg.teamType === "team" && (1 + (confirmedReg.teammates?.length || 0)) < 2 ? (
+              <div className="rounded-2xl border border-dashed border-border/80 bg-surface/50 p-6 text-center space-y-2 opacity-75">
+                <Lock className="size-8 text-amber-400 mx-auto" />
+                <h4 className="text-sm font-bold text-foreground">Digital Pass &amp; Entry Barcode Locked</h4>
+                <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                  Share your team code <strong>{confirmedReg.teamCode || confirmedReg.id}</strong> on WhatsApp. Once teammate #2 joins, the pass will activate instantly.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-2xl border-2 border-neon/40 bg-surface-2/80 p-5 text-left shadow-glow-soft space-y-4">
+                <div className="flex items-start justify-between gap-3 border-b border-border/70 pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="size-12 rounded-xl bg-black/60 border border-border flex items-center justify-center overflow-hidden shrink-0">
+                      <img src={opportunity.image} alt="" className="h-full w-full object-cover" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm sm:text-base font-extrabold text-foreground">
+                        {opportunity.title}
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        {opportunity.format} · {opportunity.location}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground block">
+                      Registration ID
+                    </span>
+                    <span className="font-mono text-sm sm:text-base font-black text-neon">
+                      {confirmedReg.id}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Summary Rows */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div>
+                    <span className="text-muted-foreground block text-[11px]">Primary Participant</span>
+                    <span className="font-bold text-foreground">{confirmedReg.fullName}</span>
                   </div>
                   <div>
-                    <h4 className="text-sm sm:text-base font-extrabold text-foreground">
-                      {opportunity.title}
-                    </h4>
-                    <p className="text-xs text-muted-foreground">
-                      {opportunity.format} · {opportunity.location}
-                    </p>
+                    <span className="text-muted-foreground block text-[11px]">College / Org</span>
+                    <span className="font-bold text-foreground truncate block">{confirmedReg.collegeOrCompany}</span>
                   </div>
-                </div>
-
-                <div className="text-right">
-                  <span className="text-[10px] uppercase font-bold tracking-wider text-muted-foreground block">
-                    Registration ID
-                  </span>
-                  <span className="font-mono text-sm sm:text-base font-black text-neon">
-                    {confirmedReg.id}
-                  </span>
-                </div>
-              </div>
-
-              {/* Summary Rows */}
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="text-muted-foreground block text-[11px]">Primary Participant</span>
-                  <span className="font-bold text-foreground">{confirmedReg.fullName}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-[11px]">College / Org</span>
-                  <span className="font-bold text-foreground truncate block">{confirmedReg.collegeOrCompany}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-[11px]">Participation Mode</span>
-                  <span className="font-bold text-foreground">
-                    {confirmedReg.teamType === "team" ? `Team (${confirmedReg.teamName})` : "Solo Builder"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground block text-[11px]">Category</span>
-                  <span className="font-bold text-foreground">{confirmedReg.userType || "College Student"}</span>
-                </div>
-              </div>
-
-              {/* What's Next in Goa Buildathon */}
-              <div className="border-t border-border/60 pt-3 space-y-2">
-                <p className="text-[11px] font-bold uppercase tracking-wider text-neon">
-                  What&apos;s Next in {opportunity.title}?
-                </p>
-                <div className="rounded-xl bg-background/60 border border-border p-2.5 space-y-2 text-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="font-semibold text-foreground">
-                      1. Idea Submission — PPT Round
-                    </span>
-                    <span className="rounded-full bg-neon/15 px-2 py-0.5 text-[10px] font-bold text-neon">
-                      🟢 Live Now
+                  <div>
+                    <span className="text-muted-foreground block text-[11px]">Participation Mode</span>
+                    <span className="font-bold text-foreground">
+                      {confirmedReg.teamType === "team" ? `Team (${confirmedReg.teamName})` : "Solo Builder"}
                     </span>
                   </div>
-                  <div className="flex items-center justify-between text-muted-foreground">
-                    <span>2. 36-Hour Offline Hackathon — Grand Finale</span>
-                    <span className="text-[11px] font-mono text-foreground font-semibold">Jan 16–17, 2027</span>
+                  <div>
+                    <span className="text-muted-foreground block text-[11px]">Category</span>
+                    <span className="font-bold text-foreground">{confirmedReg.userType || "College Student"}</span>
+                  </div>
+                </div>
+
+                {/* What's Next in Goa Buildathon */}
+                <div className="border-t border-border/60 pt-3 space-y-2">
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-neon">
+                    What&apos;s Next in {opportunity.title}?
+                  </p>
+                  <div className="rounded-xl bg-background/60 border border-border p-2.5 space-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <span className="font-semibold text-foreground">
+                        1. Idea Submission — PPT Round
+                      </span>
+                      <span className="rounded-full bg-neon/15 px-2 py-0.5 text-[10px] font-bold text-neon">
+                        🟢 Live Now
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between text-muted-foreground">
+                      <span>2. 36-Hour Offline Hackathon — Grand Finale</span>
+                      <span className="text-[11px] font-mono text-foreground font-semibold">Jan 16–17, 2027</span>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Next Action Buttons */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2.5 pt-2">
@@ -1823,14 +1831,25 @@ Platform Support: vybedriven@gmail.com
                 </a>
               )}
 
-              <Button
-                type="button"
-                variant="outline"
-                onClick={downloadPassSummary}
-                className="w-full sm:w-auto rounded-full text-xs font-semibold text-foreground hover:border-neon hover:text-neon"
-              >
-                <Download className="size-3.5 mr-1 text-neon" /> Download Digital Pass (PNG)
-              </Button>
+              {confirmedReg.teamType === "team" && (1 + (confirmedReg.teammates?.length || 0)) < 2 ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled
+                  className="w-full sm:w-auto rounded-full text-xs font-semibold text-muted-foreground border-border/60 opacity-60 cursor-not-allowed"
+                >
+                  <Lock className="size-3.5 mr-1" /> Pass Locked (Needs 2+ Members)
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={downloadPassSummary}
+                  className="w-full sm:w-auto rounded-full text-xs font-semibold text-foreground hover:border-neon hover:text-neon"
+                >
+                  <Download className="size-3.5 mr-1 text-neon" /> Download Digital Pass (PNG)
+                </Button>
+              )}
             </div>
 
             <div className="pt-2">

@@ -478,29 +478,17 @@ function ManageEventsPage() {
               )}
             </div>
 
-            {/* Search & Filter Bar */}
+            {/* Search Bar */}
             <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-3 shadow-sm sm:flex-row">
               <label className="flex min-h-11 flex-1 items-center gap-3 rounded-xl bg-surface px-4 focus-within:ring-2 focus-within:ring-ring">
                 <Search className="size-4 text-muted-foreground" />
                 <input
                   value={applicantQuery}
                   onChange={(e) => setApplicantQuery(e.target.value)}
-                  placeholder="Search applicants by name, email, phone, college or team..."
+                  placeholder="Search participants by name, email, phone, college or team..."
                   className="w-full bg-transparent text-xs sm:text-sm outline-none placeholder:text-muted-foreground"
                 />
               </label>
-
-              <select
-                value={applicantStatusFilter}
-                onChange={(e) => setApplicantStatusFilter(e.target.value)}
-                className="min-h-11 rounded-xl border border-border bg-surface px-4 text-xs sm:text-sm text-foreground outline-none focus:ring-2 focus:ring-ring"
-              >
-                <option value="All">All Statuses</option>
-                <option value="Registered">Registered</option>
-                <option value="Shortlisted">Shortlisted</option>
-                <option value="Confirmed">Confirmed</option>
-                <option value="Attended">Attended</option>
-              </select>
             </div>
 
             {/* Applicant Table */}
@@ -525,7 +513,6 @@ function ManageEventsPage() {
                         <th className="px-4 py-3">College / Company</th>
                         <th className="px-4 py-3">Team Details</th>
                         <th className="px-4 py-3">Applied At</th>
-                        <th className="px-4 py-3">Status</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border">
@@ -631,11 +618,6 @@ function ManageEventsPage() {
                                       ? `${applicant.teammates.length + 1} Members`
                                       : applicant.teamSize || "Team"}
                                   </span>
-                                  {applicant.lookingForTeammates && (
-                                    <span className="rounded bg-primary/20 px-1.5 py-0.5 text-[9px] font-bold text-neon">
-                                      Seeking teammates
-                                    </span>
-                                  )}
                                 </div>
 
                                 {/* Quick Member Status Chips */}
@@ -678,11 +660,6 @@ function ManageEventsPage() {
                             ) : (
                               <div>
                                 <span className="text-muted-foreground">Solo Entry</span>
-                                {applicant.lookingForTeammates && (
-                                  <span className="ml-1 inline-block rounded bg-primary/20 px-1 py-0.5 text-[9px] font-bold text-neon">
-                                    Looking for teammates
-                                  </span>
-                                )}
                               </div>
                             )}
                           </td>
@@ -694,32 +671,6 @@ function ManageEventsPage() {
                               month: "short",
                               year: "numeric",
                             })}
-                          </td>
-
-                          {/* Status Dropdown */}
-                          <td className="px-4 py-3.5">
-                            <select
-                              value={applicant.status}
-                              onChange={(e) =>
-                                handleStatusChange(
-                                  applicant.id,
-                                  e.target.value as EventRegistration["status"]
-                                )
-                              }
-                              className={`rounded-lg px-2.5 py-1 text-xs font-bold outline-none border transition ${
-                                applicant.status === "Confirmed"
-                                  ? "border-green-500/50 bg-green-500/10 text-green-400"
-                                  : applicant.status === "Shortlisted"
-                                  ? "border-amber-500/50 bg-amber-500/10 text-amber-400"
-                                  : "border-neon/50 bg-neon/10 text-neon"
-                              }`}
-                            >
-                              <option value="Registered">Registered</option>
-                              <option value="Shortlisted">Shortlisted</option>
-                              <option value="Confirmed">Confirmed</option>
-                              <option value="Attended">Attended</option>
-                              <option value="Cancelled">Cancelled</option>
-                            </select>
                           </td>
                         </tr>
                       ))}

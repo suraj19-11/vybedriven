@@ -433,88 +433,84 @@ function ProfilePage() {
                       className="flex flex-col justify-between rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-neon/40"
                     >
                       <div>
-                        <div className="flex items-center justify-between border-b border-border pb-3">
-                          <span className="font-mono text-xs font-bold text-neon">{reg.id}</span>
-                          <span className="rounded-full bg-neon/15 px-2.5 py-0.5 text-xs font-bold text-neon">
-                            {reg.status}
-                          </span>
-                        </div>
-
-                        <h4 className="mt-3 font-bold text-base text-foreground">
-                          {reg.opportunityTitle}
-                        </h4>
-
-                        <div className="mt-2 space-y-2">
-                          {reg.teamType === "team" ? (
-                            <div className="rounded-xl border border-border bg-surface/70 p-3">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="font-bold text-neon">
-                                  Team: {reg.teamName || "Squad"}
-                                </span>
-                                <span className="text-muted-foreground text-[11px]">
-                                  {1 + (reg.teammates?.length || 0)}/4 Members
-                                </span>
+                        {(() => {
+                          const teamCount = reg.teamType === "team" ? (1 + (reg.teammates?.length || 0)) : 1;
+                          const isPassUnlocked = reg.teamType !== "team" || teamCount >= 2;
+                          return (
+                            <>
+                              <div className="flex items-center justify-between border-b border-border pb-3">
+                                <span className="font-mono text-xs font-bold text-neon">{reg.teamCode || reg.id}</span>
+                                {isPassUnlocked ? (
+                                  <span className="rounded-full bg-neon/15 px-2.5 py-0.5 text-xs font-bold text-neon">
+                                    ✅ Verified &amp; Pass Active
+                                  </span>
+                                ) : (
+                                  <span className="rounded-full bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 text-xs font-bold text-amber-300">
+                                    🔒 Pass Locked (1/4 Members)
+                                  </span>
+                                )}
                               </div>
 
-                              {isLeader ? (
-                                <div className="mt-2">
-                                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
-                                    <span className="size-1.5 rounded-full bg-emerald-400" />
-                                    You are the Team Leader
-                                  </span>
-                                  <Button
-                                    size="sm"
-                                    onClick={() => setManagingTeamReg(reg)}
-                                    className="mt-2 w-full rounded-full bg-gradient-brand text-black font-extrabold text-xs shadow-glow hover:brightness-105"
-                                  >
-                                    <Users className="size-3.5 mr-1" /> Manage Team Roster &amp; Invitations
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div className="mt-2">
-                                  {isConfirmed ? (
-                                    <div className="flex items-center justify-between">
-                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
-                                        <CheckCircle2 className="size-3 text-emerald-400" /> Confirmed Member
+                              <h4 className="mt-3 font-bold text-base text-foreground">
+                                {reg.opportunityTitle}
+                              </h4>
+
+                              <div className="mt-2 space-y-2">
+                                {reg.teamType === "team" ? (
+                                  <div className="rounded-xl border border-border bg-surface/70 p-3">
+                                    <div className="flex items-center justify-between text-xs">
+                                      <span className="font-bold text-neon">
+                                        Team: {reg.teamName || "Squad"}
                                       </span>
-                                      <Button
-                                        size="sm"
-                                        onClick={() => setManagingTeamReg(reg)}
-                                        className="rounded-full bg-gradient-brand text-black font-extrabold text-xs shadow-glow hover:brightness-105"
-                                      >
-                                        <Users className="size-3.5 mr-1" /> Manage / Add Members
-                                      </Button>
-                                    </div>
-                                  ) : (
-                                    <div className="space-y-1.5">
-                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-400">
-                                        <span className="size-1.5 rounded-full bg-amber-400 animate-pulse" />
-                                        Invited by {reg.fullName} (Confirmation Pending)
+                                      <span className="text-muted-foreground text-[11px]">
+                                        {teamCount}/4 Members
                                       </span>
-                                      <Button
-                                        size="sm"
-                                        onClick={() => {
-                                          if (user.email) {
-                                            confirmTeammateInvitation(reg.id, user.email);
-                                            toast.success(`Joined Team "${reg.teamName}"!`);
-                                            setSyncTick((t) => t + 1);
-                                          }
-                                        }}
-                                        className="w-full rounded-full bg-amber-400 text-black font-bold text-xs shadow-sm hover:brightness-105"
-                                      >
-                                        Accept &amp; Join Team 🚀
-                                      </Button>
                                     </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <p className="text-xs text-muted-foreground">
-                              Solo Builder Entry · {reg.fullName}
-                            </p>
-                          )}
-                        </div>
+
+                                    {!isPassUnlocked && (
+                                      <p className="mt-1 text-[11px] text-amber-400 font-medium">
+                                        ⚠️ Entry Pass &amp; Barcode unlock automatically once teammate #2 joins.
+                                      </p>
+                                    )}
+
+                                    {isLeader ? (
+                                      <div className="mt-2">
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                                          <span className="size-1.5 rounded-full bg-emerald-400" />
+                                          You are the Team Leader
+                                        </span>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => setManagingTeamReg(reg)}
+                                          className="mt-2 w-full rounded-full bg-gradient-brand text-black font-extrabold text-xs shadow-glow hover:brightness-105"
+                                        >
+                                          <Users className="size-3.5 mr-1" /> {!isPassUnlocked ? "Share Code to Unlock Pass 🚀" : "Manage Team Roster"}
+                                        </Button>
+                                      </div>
+                                    ) : (
+                                      <div className="mt-2">
+                                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-400">
+                                          <CheckCircle2 className="size-3 text-emerald-400" /> Confirmed Teammate
+                                        </span>
+                                        <Button
+                                          size="sm"
+                                          onClick={() => setManagingTeamReg(reg)}
+                                          className="mt-2 w-full rounded-full bg-gradient-brand text-black font-extrabold text-xs shadow-glow hover:brightness-105"
+                                        >
+                                          <Users className="size-3.5 mr-1" /> View Team Details &amp; Code
+                                        </Button>
+                                      </div>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <p className="text-xs text-muted-foreground">
+                                    Solo Builder Entry · {reg.fullName}
+                                  </p>
+                                )}
+                              </div>
+                            </>
+                          );
+                        })()}
                       </div>
 
                       <div className="mt-4 flex items-center justify-between pt-3 border-t border-border">

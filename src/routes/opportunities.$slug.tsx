@@ -1040,15 +1040,27 @@ function OpportunityDetails() {
                     <p className="mt-1 text-xs text-muted-foreground">
                       Your application has been received by {item.organizer}.
                     </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleRegisterClick}
-                      className="mt-3 w-full rounded-full border-neon/50 text-xs font-bold text-neon hover:bg-neon hover:text-primary-foreground shadow-sm"
-                    >
-                      <Ticket className="size-3.5 mr-1.5" />
-                      View Entry Pass / Ticket
-                    </Button>
+                    {userRegRecord?.teamType === "team" && (1 + (userRegRecord.teammates?.length || 0)) < 2 ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRegisterClick}
+                        className="mt-3 w-full rounded-full border-amber-500/50 text-xs font-bold text-amber-400 hover:bg-amber-500/15 shadow-sm"
+                      >
+                        <Lock className="size-3.5 mr-1.5 text-amber-400" />
+                        Unlock Pass — Invite Teammate (1/4)
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleRegisterClick}
+                        className="mt-3 w-full rounded-full border-neon/50 text-xs font-bold text-neon hover:bg-neon hover:text-primary-foreground shadow-sm"
+                      >
+                        <Ticket className="size-3.5 mr-1.5" />
+                        View Entry Pass / Ticket
+                      </Button>
+                    )}
 
                     {userRegRecord?.teamType === "team" && (
                       <Button
