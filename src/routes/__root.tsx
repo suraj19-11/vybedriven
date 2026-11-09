@@ -205,7 +205,7 @@ function RootComponent() {
     // Instant local session restoration (0ms blocking latency)
     supabase.auth.getSession().then(({ data }) => {
       if (!active) return;
-      const currentUser = data.session?.user ?? null;
+      const currentUser = data?.session?.user ?? null;
       setUser(currentUser);
       if (currentUser) {
         fetchProfile(currentUser.id).finally(() => {

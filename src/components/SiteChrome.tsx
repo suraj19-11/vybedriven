@@ -18,6 +18,7 @@ import {
   Trophy,
   Settings,
   Sparkles,
+  MessageCircle,
 } from "lucide-react";
 import homeIcon from "@/assets/nav/home.png.asset.json";
 import hackathonsIcon from "@/assets/nav/hackathons.png.asset.json";
