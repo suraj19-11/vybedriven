@@ -455,6 +455,37 @@ export function TeamManagementModal({
             </div>
           </div>
 
+          {/* Official WhatsApp Community Access for Confirmed Squad Members */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-emerald-500/40 bg-emerald-950/20 p-3.5 shadow-sm">
+            <div className="flex items-center gap-2.5">
+              <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-emerald-500/20 text-emerald-400">
+                <MessageCircle className="size-4" />
+              </span>
+              <div>
+                <p className="text-xs font-bold text-foreground">
+                  Official WhatsApp Community
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  Exclusive channel for registered participants and squad mates.
+                </p>
+              </div>
+            </div>
+            <a
+              href={
+                registration.opportunitySlug === "goa-buildathon-2027"
+                  ? "https://chat.whatsapp.com/HXLGLzUJ6G2Hr1FL8RE7yW"
+                  : "https://chat.whatsapp.com/FTO9jg5AgW3CSZuA3PZVIU?s=cl&p=a&iam=2"
+              }
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center justify-center gap-1.5 rounded-full bg-[#25D366] text-white font-extrabold text-xs px-4 py-2 hover:brightness-110 shadow-sm transition shrink-0"
+            >
+              <MessageCircle className="size-3.5" />
+              <span>Join WhatsApp Group</span>
+              <ExternalLink className="size-3 opacity-80" />
+            </a>
+          </div>
+
           {/* Round 1 PPT Submission Quick Access */}
           {totalMembers >= 2 ? (
             <div className="rounded-2xl border-2 border-emerald-500/40 bg-emerald-950/20 p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-glow-soft">

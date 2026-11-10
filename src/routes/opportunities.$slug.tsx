@@ -772,6 +772,20 @@ function OpportunityDetails() {
                         Manage Team ({1 + (userRegRecord?.teammates?.length || 0)}/4)
                       </Button>
                     </div>
+
+                    {/* WhatsApp Community - EXCLUSIVE TO REGISTERED TEAMS & MEMBERS */}
+                    {item.groupUrl && (
+                      <a
+                        href={item.groupUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs font-semibold text-emerald-400 transition hover:bg-emerald-500/20"
+                      >
+                        <MessageCircle className="size-3.5 text-emerald-400" />
+                        <span>{item.groupLabel ?? "Join WhatsApp Community"}</span>
+                        <ExternalLink className="size-3 opacity-80" />
+                      </a>
+                    )}
                   </div>
                 ) : (
                   <div className="mt-3.5 space-y-2">
@@ -811,20 +825,6 @@ function OpportunityDetails() {
                       </div>
                     )}
                   </div>
-                )}
-
-                {/* WhatsApp Community Shortcut on Mobile */}
-                {item.groupUrl && (
-                  <a
-                    href={item.groupUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-neon/40 bg-surface px-3 py-2 text-xs font-semibold text-neon transition hover:bg-neon/15"
-                  >
-                    <MessageCircle className="size-3.5 text-neon" />
-                    <span>{item.groupLabel ?? "Join WhatsApp Community"}</span>
-                    <ExternalLink className="size-3 opacity-80" />
-                  </a>
                 )}
               </div>
 
@@ -1297,6 +1297,20 @@ function OpportunityDetails() {
                         </Button>
                       </div>
                     </div>
+
+                    {/* Official WhatsApp Community - EXCLUSIVE TO REGISTERED SQUADS & TEAMS */}
+                    {item.groupUrl && (
+                      <a
+                        href={item.groupUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-4 py-2.5 text-xs sm:text-sm font-semibold text-emerald-400 transition hover:border-emerald-500 hover:bg-emerald-500/20 hover:shadow-glow-soft"
+                      >
+                        <MessageCircle className="size-4 text-emerald-400" />
+                        <span>{item.groupLabel ?? "Join Official WhatsApp Community"}</span>
+                        <ExternalLink className="size-3.5 opacity-80" />
+                      </a>
+                    )}
                   </div>
                 ) : (
                   <div className="mt-5 space-y-3">
@@ -1338,20 +1352,6 @@ function OpportunityDetails() {
                       </div>
                     )}
                   </div>
-                )}
-
-                {/* Group Link */}
-                {item.groupUrl && (
-                  <a
-                    href={item.groupUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="mt-3 flex w-full items-center justify-center gap-2 rounded-full border border-neon/40 bg-surface/80 px-4 py-2.5 text-xs sm:text-sm font-semibold text-neon transition hover:border-neon hover:bg-neon/15 hover:shadow-glow-soft"
-                  >
-                    <MessageCircle className="size-4 text-neon" />
-                    <span>{item.groupLabel ?? "Join Official WhatsApp Community"}</span>
-                    <ExternalLink className="size-3.5 opacity-80" />
-                  </a>
                 )}
 
                 {/* Organizer Contacts */}
