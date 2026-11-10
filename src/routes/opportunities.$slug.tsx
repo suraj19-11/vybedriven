@@ -635,7 +635,7 @@ function OpportunityDetails() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventStructuredData) }}
       />
       <Navbar />
-      <main>
+      <main className="pb-24 lg:pb-0">
         {/* Hero Section */}
         <section className="border-b border-border bg-surface">
           <div className="mx-auto grid max-w-[1200px] gap-6 sm:gap-7 px-4 sm:px-6 pb-8 pt-8 sm:pb-10 sm:pt-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
@@ -709,6 +709,133 @@ function OpportunityDetails() {
         <section className="mx-auto max-w-[1200px] px-4 sm:px-6 py-6 sm:py-8">
           <div className="grid gap-7 lg:grid-cols-[1fr_320px]">
             <div>
+              {/* MOBILE ONLY: Prominent Top Action Box (Zero Scrolling Required on Phones) */}
+              <div className="mb-6 rounded-2xl border-2 border-neon/50 bg-gradient-to-br from-neon/15 via-card to-card p-4 sm:p-5 shadow-glow-soft lg:hidden">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/50 bg-emerald-500/20 px-2.5 py-0.5 text-[10px] font-black uppercase tracking-wider text-emerald-400">
+                    <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Registrations Open
+                  </span>
+                  <span className="text-xs font-bold text-neon font-mono">
+                    {item.slug === "goa-buildathon-2027" ? "2,000+ Registrations" : `${regCount} applicants`}
+                  </span>
+                </div>
+
+                <h3 className="mt-2 text-base font-black text-foreground">
+                  {item.title}
+                </h3>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {item.registrationDeadline === "To be announced"
+                    ? "Register now to secure your participation spot."
+                    : `Apply before ${item.registrationDeadline}.`}
+                </p>
+
+                {/* Mobile Action Buttons */}
+                {isRegistered ? (
+                  <div className="mt-3.5 space-y-2.5">
+                    {/* PPT Round 1 CTA for Teams with >= 2 members */}
+                    {userRegRecord?.teamType === "team" && (1 + (userRegRecord.teammates?.length || 0)) >= 2 ? (
+                      <Button
+                        type="button"
+                        onClick={() => setIdeaModalOpen(true)}
+                        className="w-full rounded-xl bg-neon text-primary-foreground font-black text-xs py-3 shadow-glow hover:brightness-105"
+                      >
+                        <Sparkles className="size-3.5 mr-1.5" />
+                        {userRegRecord?.submission?.pptUrl
+                          ? "View / Edit Round 1 PPT Deck ✓"
+                          : "Submit Round 1 Idea (PPT) 🚀"}
+                      </Button>
+                    ) : null}
+
+                    <div className="grid grid-cols-2 gap-2">
+                      {userRegRecord?.teamType === "team" && (1 + (userRegRecord.teammates?.length || 0)) < 2 ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRegisterClick}
+                          className="w-full rounded-xl border-amber-500/50 text-[11px] font-bold text-amber-400 hover:bg-amber-500/15"
+                        >
+                          <Lock className="size-3 mr-1 text-amber-400" />
+                          Pass Locked (1/4)
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={handleRegisterClick}
+                          className="w-full rounded-xl border-neon/50 text-[11px] font-bold text-neon hover:bg-neon hover:text-primary-foreground"
+                        >
+                          <Ticket className="size-3 mr-1" />
+                          View Entry Pass
+                        </Button>
+                      )}
+
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        onClick={() => setTeamModalOpen(true)}
+                        className="w-full rounded-xl text-[11px] font-bold"
+                      >
+                        <Users className="size-3 mr-1" />
+                        Manage Team ({1 + (userRegRecord?.teammates?.length || 0)}/4)
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-3.5 space-y-2">
+                    {item.registrationUrl ? (
+                      <a
+                        href={item.registrationUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-brand px-5 py-3 text-sm font-bold text-primary-foreground shadow-glow hover:brightness-105 transition"
+                      >
+                        Register Now
+                        <ArrowRight className="size-4" />
+                      </a>
+                    ) : (
+                      item.status !== "Sold out" && (
+                        <Button
+                          type="button"
+                          onClick={handleRegisterClick}
+                          className="w-full rounded-xl bg-gradient-brand text-primary-foreground font-black py-3.5 text-sm shadow-glow hover:brightness-105"
+                        >
+                          Register Now
+                          <Sparkles className="ml-2 inline size-4" />
+                        </Button>
+                      )
+                    )}
+
+                    {!user && (
+                      <div className="text-center pt-0.5">
+                        <button
+                          type="button"
+                          onClick={() => setExploreGateOpen(true)}
+                          className="inline-flex items-center gap-1 text-[11px] font-semibold text-muted-foreground hover:text-neon transition cursor-pointer"
+                        >
+                          <LogIn className="size-3" />
+                          <span>Already registered? Sign in to view pass</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* WhatsApp Community Shortcut on Mobile */}
+                {item.groupUrl && (
+                  <a
+                    href={item.groupUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-xl border border-neon/40 bg-surface px-3 py-2 text-xs font-semibold text-neon transition hover:bg-neon/15"
+                  >
+                    <MessageCircle className="size-3.5 text-neon" />
+                    <span>{item.groupLabel ?? "Join WhatsApp Community"}</span>
+                    <ExternalLink className="size-3 opacity-80" />
+                  </a>
+                )}
+              </div>
+
               {/* Quick Facts Grid */}
               <div className="grid overflow-hidden rounded-2xl border border-border bg-card grid-cols-2 lg:grid-cols-3">
                 {facts.map(({ icon: Icon, label, value }) => (
@@ -1239,6 +1366,59 @@ function OpportunityDetails() {
             </aside>
           </div>
         </section>
+
+        {/* MOBILE ONLY: Sticky Floating Bottom Action Bar */}
+        <div className="fixed bottom-0 inset-x-0 z-40 border-t border-border/80 bg-background/95 backdrop-blur-xl px-4 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.7)] lg:hidden">
+          <div className="mx-auto flex max-w-md items-center justify-between gap-3">
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground block">
+                {item.fee === "Free" ? "Free Registration" : item.fee}
+              </span>
+              <span className="text-xs font-black text-neon truncate block">
+                {item.slug === "goa-buildathon-2027" ? "2,000+ Joined" : item.status}
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2 shrink-0">
+              {isRegistered ? (
+                userRegRecord?.teamType === "team" && (1 + (userRegRecord.teammates?.length || 0)) >= 2 ? (
+                  <Button
+                    size="sm"
+                    onClick={() => setIdeaModalOpen(true)}
+                    className="rounded-full bg-neon text-primary-foreground font-black text-xs px-4 py-2.5 shadow-glow"
+                  >
+                    <Sparkles className="size-3.5 mr-1" />
+                    {userRegRecord?.submission?.pptUrl ? "Edit PPT" : "Submit PPT 🚀"}
+                  </Button>
+                ) : (
+                  <Button
+                    size="sm"
+                    onClick={handleRegisterClick}
+                    className="rounded-full bg-neon text-primary-foreground font-black text-xs px-4 py-2.5 shadow-glow"
+                  >
+                    <Ticket className="size-3.5 mr-1" /> View Pass
+                  </Button>
+                )
+              ) : item.registrationUrl ? (
+                <a
+                  href={item.registrationUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 rounded-full bg-gradient-brand px-5 py-2.5 text-xs font-black text-primary-foreground shadow-glow"
+                >
+                  Register Now <ArrowRight className="size-3.5" />
+                </a>
+              ) : (
+                <Button
+                  onClick={handleRegisterClick}
+                  className="rounded-full bg-gradient-brand text-primary-foreground font-black text-xs px-5 py-2.5 shadow-glow"
+                >
+                  Register Now <Sparkles className="size-3.5 ml-1" />
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
       </main>
 
       <Footer />
