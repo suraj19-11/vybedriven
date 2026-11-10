@@ -110,6 +110,7 @@ export function EventRegistrationModal({
   const [submitting, setSubmitting] = useState(false);
   const [confirmedReg, setConfirmedReg] = useState<EventRegistration | null>(null);
   const [ideaModalOpen, setIdeaModalOpen] = useState(false);
+  const [guestProceed, setGuestProceed] = useState(false);
 
   // Inline Auth State for unauthenticated visitors
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
@@ -187,22 +188,44 @@ export function EventRegistrationModal({
 
         if (signUpErr) {
           setAuthBusy(false);
-          if (signUpErr.message.toLowerCase().includes("user already registered")) {
+          const errLower = signUpErr.message.toLowerCase();
+          if (errLower.includes("user already registered")) {
             setAuthError(
               "An account with this email already exists. Please switch to 'Sign In' or click 'Continue with Google' above!"
             );
+            return;
+          } else if (
+            errLower.includes("rate limit") ||
+            errLower.includes("too many") ||
+            errLower.includes("429")
+          ) {
+            // Supabase email rate limit exceeded — auto-advance to direct registration
+            toast.info("Proceeding directly to registration — no password needed!");
+            const names = authName.trim().split(" ");
+            setFirstName(names[0] || "");
+            setLastName(names.slice(1).join(" ") || "");
+            setEmail(authEmail.trim());
+            if (authPhone.trim()) setPhone(authPhone.trim());
+            setGuestProceed(true);
+            setStep(1);
+            return;
           } else {
             setAuthError(signUpErr.message);
+            return;
           }
-          return;
         }
 
         if (!signUpData.session) {
+          // Email confirmation is active on Supabase — don't block registration!
           setAuthBusy(false);
-          toast.success("Verification email sent!");
-          setAuthError(
-            `📩 Verification email sent to ${authEmail.trim()}! Please check your inbox (and Spam folder) to verify your account and complete your registration.`
-          );
+          toast.success("Proceeding to complete your team registration!");
+          const names = authName.trim().split(" ");
+          setFirstName(names[0] || "");
+          setLastName(names.slice(1).join(" ") || "");
+          setEmail(authEmail.trim());
+          if (authPhone.trim()) setPhone(authPhone.trim());
+          setGuestProceed(true);
+          setStep(1);
           return;
         }
 
@@ -214,6 +237,7 @@ export function EventRegistrationModal({
         setLastName(names.slice(1).join(" ") || "");
         setEmail(authEmail.trim());
         if (authPhone.trim()) setPhone(authPhone.trim());
+        setGuestProceed(true);
         setStep(1);
         return;
       }
@@ -918,15 +942,15 @@ Platform Support: vybedriven@gmail.com
         </DialogHeader>
 
         {/* AUTH REQUIRED IF NOT LOGGED IN */}
-        {!user && step !== 3 ? (
+        {!user && !guestProceed && step !== 3 ? (
           <div className="mt-4 space-y-5 text-xs sm:text-sm">
             <div className="rounded-2xl border border-neon/40 bg-neon/5 p-4 sm:p-5">
               <div className="flex items-center gap-2.5 text-neon font-bold text-sm sm:text-base">
-                <Lock className="size-5 shrink-0" />
-                <span>Login or Sign Up Required to Register</span>
+                <Sparkles className="size-5 shrink-0" />
+                <span>Quick Builder Registration</span>
               </div>
               <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                To link your registration with your profile, access your team roster, and view your entry pass, please sign in or create an account below.
+                Sign in with Google for 1-click access, or register your team directly below without a password.
               </p>
             </div>
 
@@ -946,6 +970,23 @@ Platform Support: vybedriven@gmail.com
               </svg>
               <span>Continue with Google</span>
             </Button>
+
+            {/* Direct Registration Option */}
+            <div className="rounded-2xl border-2 border-dashed border-neon/50 bg-card p-3.5 text-center shadow-sm">
+              <p className="text-xs text-muted-foreground mb-2">
+                Don&apos;t want to use Google or create a password?
+              </p>
+              <Button
+                type="button"
+                onClick={() => {
+                  setGuestProceed(true);
+                  setStep(1);
+                }}
+                className="w-full rounded-xl bg-neon text-primary-foreground font-black text-xs sm:text-sm py-2.5 shadow-glow hover:brightness-105"
+              >
+                ⚡ Register Directly (No Password Needed) →
+              </Button>
+            </div>
 
             <div className="flex items-center gap-3 text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               <span className="h-px flex-1 bg-border" />
@@ -1090,7 +1131,7 @@ Platform Support: vybedriven@gmail.com
         ) : null}
 
         {/* STEP 1: BASIC & USER DETAILS OR JOIN WITH CODE */}
-        {user && step === 1 && (
+        {(user || guestProceed) && step === 1 && (
           <div className="mt-4 space-y-4 text-xs sm:text-sm">
             {/* Registration Mode Switcher */}
             <div className="grid grid-cols-2 gap-2 rounded-2xl border border-border bg-surface p-1.5">
@@ -1492,7 +1533,7 @@ Platform Support: vybedriven@gmail.com
     )}
 
         {/* STEP 2: TEAM SETUP & SQUAD FORMATION */}
-        {user && step === 2 && (
+        {(user || guestProceed) && step === 2 && (
           <form onSubmit={handleFinalSubmit} className="mt-4 space-y-5 text-xs sm:text-sm">
             {/* Important Notes Banner */}
             <div className="rounded-2xl border border-sky-400/35 bg-gradient-to-r from-sky-500/15 via-surface to-surface p-4">

@@ -117,9 +117,18 @@ function AuthPage() {
 
         setBusy(false);
         if (authError) {
-          if (authError.message.toLowerCase().includes("user already registered")) {
+          const errLower = authError.message.toLowerCase();
+          if (errLower.includes("user already registered")) {
             setError(
               "An account with this email already exists. Please switch to 'Sign In' or click 'Continue with Google' above!"
+            );
+          } else if (
+            errLower.includes("rate limit") ||
+            errLower.includes("too many") ||
+            errLower.includes("429")
+          ) {
+            setError(
+              "⚡ Supabase email verification limit reached for this hour. Please click 'Continue with Google' above for instant 1-click sign in!"
             );
           } else {
             setError(authError.message);

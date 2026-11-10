@@ -308,8 +308,17 @@ function EventAuthGateDialog({
 
         if (signUpErr) {
           setBusy(false);
-          if (signUpErr.message.toLowerCase().includes("user already registered")) {
+          const errLower = signUpErr.message.toLowerCase();
+          if (errLower.includes("user already registered")) {
             setError("An account with this email already exists. Please switch to 'Sign In' or use 'Continue with Google' above!");
+          } else if (
+            errLower.includes("rate limit") ||
+            errLower.includes("too many") ||
+            errLower.includes("429")
+          ) {
+            setError(
+              "⚡ Email verification limit reached on Supabase. Please click 'Continue with Google' above, or click 'Register Directly' below — no password needed!"
+            );
           } else {
             setError(signUpErr.message);
           }
@@ -401,6 +410,23 @@ function EventAuthGateDialog({
             </svg>
             <span>Continue with Google</span>
           </Button>
+
+          {/* Direct Registration Option */}
+          <div className="rounded-xl border border-neon/30 bg-neon/5 p-3 text-center">
+            <p className="text-xs text-muted-foreground mb-1.5">
+              Want to skip password creation and register directly?
+            </p>
+            <Button
+              type="button"
+              onClick={() => {
+                onOpenChange(false);
+                window.location.href = `/opportunities/${item.slug}?register=1`;
+              }}
+              className="w-full rounded-xl bg-neon text-primary-foreground font-bold text-xs py-2 shadow-glow hover:brightness-105"
+            >
+              ⚡ Register Directly for Event →
+            </Button>
+          </div>
 
           <div className="flex items-center gap-3 text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
             <span className="h-px flex-1 bg-border" />
@@ -525,15 +551,6 @@ function OpportunityDetails() {
   const [ideaModalOpen, setIdeaModalOpen] = useState(false);
 
   const incomingJoinCode = search.joinCode || search.joinTeam;
-
-  // Mandatory Auth Gate: if visitor is not logged in, prompt them to sign in or create account
-  useEffect(() => {
-    if (!loading && !user && search.register !== "1" && !incomingJoinCode) {
-      setExploreGateOpen(true);
-    } else {
-      setExploreGateOpen(false);
-    }
-  }, [user, loading, search.register, incomingJoinCode]);
 
   // Auto-open modal if requested via ?register=1 or ?joinCode=...
   useEffect(() => {
