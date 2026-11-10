@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { supabase } from "@/integrations/supabase/client";
 import { AuthProvider } from "@/lib/auth";
 import { TeamInviteBanner } from "@/components/TeamInviteBanner";
+import { getBuilderSession, BUILDER_AUTH_CHANGE_EVENT } from "@/lib/builder-auth";
 import type { User } from "@supabase/supabase-js";
 
 function NotFoundComponent() {
@@ -208,8 +209,21 @@ function RootComponent() {
 
   useEffect(() => {
     let active = true;
-    // Instant local session restoration (0ms blocking latency)
-    supabase.auth.getSession().then(({ data }) => {
+
+    const syncSession = async () => {
+      // 1. Check custom builder auth session first
+      const builderUser = getBuilderSession();
+      if (builderUser) {
+        if (!active) return;
+        setUser(builderUser);
+        fetchProfile(builderUser.id).finally(() => {
+          if (active) setLoading(false);
+        });
+        return;
+      }
+
+      // 2. Check Supabase session
+      const { data } = await supabase.auth.getSession();
       if (!active) return;
       const currentUser = data?.session?.user ?? null;
       setUser(currentUser);
@@ -221,25 +235,40 @@ function RootComponent() {
         setProfile(null);
         setLoading(false);
       }
-    });
+    };
+
+    syncSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event !== "SIGNED_IN" && event !== "SIGNED_OUT" && event !== "USER_UPDATED") return;
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-      if (currentUser) {
-        fetchProfile(currentUser.id);
-      } else {
-        setProfile(null);
+      // If a builder user is already active, prioritize unless Supabase sign-in occurred
+      if (event === "SIGNED_IN" && session?.user) {
+        setUser(session.user);
+        fetchProfile(session.user.id);
+        setLoading(false);
+        router.invalidate();
+        queryClient.invalidateQueries();
+        return;
       }
-      setLoading(false);
+      syncSession();
       router.invalidate();
       if (event !== "SIGNED_OUT") queryClient.invalidateQueries();
     });
 
+    const handleCustomAuthChange = () => {
+      syncSession();
+      router.invalidate();
+      queryClient.invalidateQueries();
+    };
+
+    window.addEventListener(BUILDER_AUTH_CHANGE_EVENT, handleCustomAuthChange);
+    window.addEventListener("storage", handleCustomAuthChange);
+
     return () => {
       active = false;
       subscription.unsubscribe();
+      window.removeEventListener(BUILDER_AUTH_CHANGE_EVENT, handleCustomAuthChange);
+      window.removeEventListener("storage", handleCustomAuthChange);
     };
   }, [queryClient, router]);
 

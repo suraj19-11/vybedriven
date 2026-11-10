@@ -39,6 +39,7 @@ import { Navbar, Footer } from "@/components/SiteChrome";
 import { Button } from "@/components/ui/button";
 import { getOpportunity, type Opportunity } from "@/data/opportunities";
 import { useAuth } from "@/lib/auth";
+import { createBuilderAccount, signInBuilderAccount } from "@/lib/builder-auth";
 import { EventRegistrationModal } from "@/components/EventRegistrationModal";
 import { TeamManagementModal } from "@/components/TeamManagementModal";
 import { IdeaSubmissionModal } from "@/components/IdeaSubmissionModal";
@@ -297,63 +298,45 @@ function EventAuthGateDialog({
           return;
         }
 
-        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        const { user: newBuilderUser, error: builderErr } = await createBuilderAccount({
+          fullName: fullName.trim(),
           email: email.trim(),
           password,
-          options: {
-            data: { full_name: fullName.trim(), phone: phone.trim() || undefined },
-            emailRedirectTo: `${window.location.origin}/opportunities/${item.slug}`,
-          },
+          phone: phone.trim() || undefined,
         });
 
-        if (signUpErr) {
+        if (builderErr) {
           setBusy(false);
-          const errLower = signUpErr.message.toLowerCase();
-          if (errLower.includes("user already registered")) {
-            setError("An account with this email already exists. Please switch to 'Sign In' or use 'Continue with Google' above!");
-          } else if (
-            errLower.includes("rate limit") ||
-            errLower.includes("too many") ||
-            errLower.includes("429")
-          ) {
-            setError(
-              "⚡ Email verification limit reached on Supabase. Please click 'Continue with Google' above, or click 'Register Directly' below — no password needed!"
-            );
-          } else {
-            setError(signUpErr.message);
-          }
+          setError(builderErr);
           return;
         }
 
-        if (!signUpData.session) {
+        if (newBuilderUser) {
+          toast.success(`Welcome, ${fullName.trim()}! Event unlocked.`);
           setBusy(false);
-          toast.success("Verification link sent to your email!");
-          setError(`📩 Verification link sent to ${email.trim()}! Please check your inbox and verify your email to unlock event details.`);
+          onOpenChange(false);
           return;
         }
       }
 
-      // Sign in with password
-      const { error: signInErr } = await supabase.auth.signInWithPassword({
+      // Sign in mode
+      const { user: signedInUser, error: signInErr } = await signInBuilderAccount({
         email: email.trim(),
         password,
       });
 
       if (signInErr) {
         setBusy(false);
-        if (signInErr.message.toLowerCase().includes("email not confirmed")) {
-          setError("⚠️ Your email is not verified yet. Please check your inbox (and spam folder) for the verification email.");
-        } else if (signInErr.message.toLowerCase().includes("invalid login credentials")) {
-          setError("Invalid email or password. If you originally signed in with Google, please click 'Continue with Google' above. Or click 'Forgot password?' to reset.");
-        } else {
-          setError(signInErr.message);
-        }
+        setError(signInErr);
         return;
       }
 
-      toast.success("Welcome back! Event unlocked.");
-      setBusy(false);
-      onOpenChange(false);
+      if (signedInUser) {
+        toast.success("Welcome back! Event unlocked.");
+        setBusy(false);
+        onOpenChange(false);
+        return;
+      }
     } catch (err: unknown) {
       setBusy(false);
       setError(err instanceof Error ? err.message : "Authentication error.");
@@ -410,23 +393,6 @@ function EventAuthGateDialog({
             </svg>
             <span>Continue with Google</span>
           </Button>
-
-          {/* Direct Registration Option */}
-          <div className="rounded-xl border border-neon/30 bg-neon/5 p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1.5">
-              Want to skip password creation and register directly?
-            </p>
-            <Button
-              type="button"
-              onClick={() => {
-                onOpenChange(false);
-                window.location.href = `/opportunities/${item.slug}?register=1`;
-              }}
-              className="w-full rounded-xl bg-neon text-primary-foreground font-bold text-xs py-2 shadow-glow hover:brightness-105"
-            >
-              ⚡ Register Directly for Event →
-            </Button>
-          </div>
 
           <div className="flex items-center gap-3 text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
             <span className="h-px flex-1 bg-border" />
@@ -551,6 +517,15 @@ function OpportunityDetails() {
   const [ideaModalOpen, setIdeaModalOpen] = useState(false);
 
   const incomingJoinCode = search.joinCode || search.joinTeam;
+
+  // Mandatory Auth Gate: if visitor is not logged in, prompt them to sign in or create account
+  useEffect(() => {
+    if (!loading && !user && search.register !== "1" && !incomingJoinCode) {
+      setExploreGateOpen(true);
+    } else {
+      setExploreGateOpen(false);
+    }
+  }, [user, loading, search.register, incomingJoinCode]);
 
   // Auto-open modal if requested via ?register=1 or ?joinCode=...
   useEffect(() => {
@@ -1120,10 +1095,33 @@ function OpportunityDetails() {
                   )}
                 </section>
               )}
+
+              {/* Mobile-Only Contact Queries (Clean, without duplicate Register Now card) */}
+              {item.contacts && (
+                <div className="mt-6 rounded-2xl border border-border bg-card p-4 sm:p-5 lg:hidden">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">QUERIES</p>
+                  <ul className="mt-2 space-y-1.5">
+                    {item.contacts.map((contact) => (
+                      <li key={contact.phone} className="text-xs">
+                        <a href={`tel:${contact.phone}`} className="font-semibold text-foreground hover:text-neon">
+                          {contact.name}
+                        </a>
+                        <span className="text-muted-foreground"> · {contact.phone}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <a
+                    href="mailto:vybedriven@gmail.com"
+                    className="mt-2.5 block text-xs text-muted-foreground hover:text-neon transition"
+                  >
+                    Have questions? Ask Vybe Driven (vybedriven@gmail.com)
+                  </a>
+                </div>
+              )}
             </div>
 
-            {/* Sticky Registration Sidebar */}
-            <aside className="lg:sticky lg:top-28 lg:self-start">
+            {/* Desktop-Only Sticky Registration Sidebar */}
+            <aside className="hidden lg:block lg:sticky lg:top-28 lg:self-start">
               <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 shadow-sm">
                 {/* Host Control Box */}
                 {isHost && (

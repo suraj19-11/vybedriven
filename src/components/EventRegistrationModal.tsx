@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { createBuilderAccount, signInBuilderAccount, getBuilderSession } from "@/lib/builder-auth";
 import type { Opportunity } from "@/data/opportunities";
 import {
   submitRegistration,
@@ -110,7 +111,6 @@ export function EventRegistrationModal({
   const [submitting, setSubmitting] = useState(false);
   const [confirmedReg, setConfirmedReg] = useState<EventRegistration | null>(null);
   const [ideaModalOpen, setIdeaModalOpen] = useState(false);
-  const [guestProceed, setGuestProceed] = useState(false);
 
   // Inline Auth State for unauthenticated visitors
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
@@ -174,104 +174,56 @@ export function EventRegistrationModal({
           return;
         }
 
-        const { data: signUpData, error: signUpErr } = await supabase.auth.signUp({
+        const { user: newBuilderUser, error: builderErr } = await createBuilderAccount({
+          fullName: authName.trim(),
           email: authEmail.trim(),
           password: authPassword,
-          options: {
-            data: {
-              full_name: authName.trim(),
-              phone: authPhone.trim() || undefined,
-            },
-            emailRedirectTo: `${window.location.origin}/opportunities/${opportunity.slug}?register=1`,
-          },
+          phone: authPhone.trim() || undefined,
         });
 
-        if (signUpErr) {
+        if (builderErr) {
           setAuthBusy(false);
-          const errLower = signUpErr.message.toLowerCase();
-          if (errLower.includes("user already registered")) {
-            setAuthError(
-              "An account with this email already exists. Please switch to 'Sign In' or click 'Continue with Google' above!"
-            );
-            return;
-          } else if (
-            errLower.includes("rate limit") ||
-            errLower.includes("too many") ||
-            errLower.includes("429")
-          ) {
-            // Supabase email rate limit exceeded — auto-advance to direct registration
-            toast.info("Proceeding directly to registration — no password needed!");
-            const names = authName.trim().split(" ");
-            setFirstName(names[0] || "");
-            setLastName(names.slice(1).join(" ") || "");
-            setEmail(authEmail.trim());
-            if (authPhone.trim()) setPhone(authPhone.trim());
-            setGuestProceed(true);
-            setStep(1);
-            return;
-          } else {
-            setAuthError(signUpErr.message);
-            return;
-          }
+          setAuthError(builderErr);
+          return;
         }
 
-        if (!signUpData.session) {
-          // Email confirmation is active on Supabase — don't block registration!
+        if (newBuilderUser) {
+          toast.success(`Welcome, ${authName.trim()}! Your builder account is ready.`);
           setAuthBusy(false);
-          toast.success("Proceeding to complete your team registration!");
+
           const names = authName.trim().split(" ");
           setFirstName(names[0] || "");
           setLastName(names.slice(1).join(" ") || "");
           setEmail(authEmail.trim());
           if (authPhone.trim()) setPhone(authPhone.trim());
-          setGuestProceed(true);
           setStep(1);
           return;
         }
-
-        toast.success("Account created successfully!");
-        setAuthBusy(false);
-
-        const names = authName.trim().split(" ");
-        setFirstName(names[0] || "");
-        setLastName(names.slice(1).join(" ") || "");
-        setEmail(authEmail.trim());
-        if (authPhone.trim()) setPhone(authPhone.trim());
-        setGuestProceed(true);
-        setStep(1);
-        return;
       }
 
-      const { data, error: signInErr } = await supabase.auth.signInWithPassword({
+      // Sign In mode
+      const { user: signedInUser, error: signInErr } = await signInBuilderAccount({
         email: authEmail.trim(),
         password: authPassword,
       });
 
       if (signInErr) {
         setAuthBusy(false);
-        if (signInErr.message.toLowerCase().includes("email not confirmed")) {
-          setAuthError(
-            "⚠️ Your email address is not verified yet. Please check your inbox and spam folder for the confirmation link to activate your account."
-          );
-        } else if (signInErr.message.toLowerCase().includes("invalid login credentials")) {
-          setAuthError(
-            "Invalid email or password. If you originally signed in with Google, please click 'Continue with Google' above. Or click 'Forgot password?' below to reset."
-          );
-        } else {
-          setAuthError(signInErr.message);
-        }
+        setAuthError(signInErr);
         return;
       }
 
-      toast.success("Signed in successfully! Let's complete your registration.");
-      setAuthBusy(false);
+      if (signedInUser) {
+        toast.success("Signed in successfully! Let's complete your registration.");
+        setAuthBusy(false);
 
-      const names = (data.user.user_metadata?.["full_name"] || authEmail.split("@")[0]).trim().split(" ");
-      setFirstName(names[0] || "");
-      setLastName(names.slice(1).join(" ") || "");
-      setEmail(authEmail.trim());
-      if (authPhone.trim()) setPhone(authPhone.trim());
-      setStep(1);
+        const names = (signedInUser.user_metadata?.["full_name"] || authEmail.split("@")[0]).trim().split(" ");
+        setFirstName(names[0] || "");
+        setLastName(names.slice(1).join(" ") || "");
+        setEmail(authEmail.trim());
+        if (authPhone.trim()) setPhone(authPhone.trim());
+        setStep(1);
+      }
     } catch (err: unknown) {
       setAuthBusy(false);
       setAuthError(err instanceof Error ? err.message : "Authentication error.");
@@ -942,7 +894,7 @@ Platform Support: vybedriven@gmail.com
         </DialogHeader>
 
         {/* AUTH REQUIRED IF NOT LOGGED IN */}
-        {!user && !guestProceed && step !== 3 ? (
+        {!user && !getBuilderSession() && step !== 3 ? (
           <div className="mt-4 space-y-5 text-xs sm:text-sm">
             <div className="rounded-2xl border border-neon/40 bg-neon/5 p-4 sm:p-5">
               <div className="flex items-center gap-2.5 text-neon font-bold text-sm sm:text-base">
@@ -950,7 +902,7 @@ Platform Support: vybedriven@gmail.com
                 <span>Quick Builder Registration</span>
               </div>
               <p className="mt-1.5 text-xs text-muted-foreground leading-relaxed">
-                Sign in with Google for 1-click access, or register your team directly below without a password.
+                Sign in with Google for 1-click access, or create your builder account below with email and password.
               </p>
             </div>
 
@@ -970,23 +922,6 @@ Platform Support: vybedriven@gmail.com
               </svg>
               <span>Continue with Google</span>
             </Button>
-
-            {/* Direct Registration Option */}
-            <div className="rounded-2xl border-2 border-dashed border-neon/50 bg-card p-3.5 text-center shadow-sm">
-              <p className="text-xs text-muted-foreground mb-2">
-                Don&apos;t want to use Google or create a password?
-              </p>
-              <Button
-                type="button"
-                onClick={() => {
-                  setGuestProceed(true);
-                  setStep(1);
-                }}
-                className="w-full rounded-xl bg-neon text-primary-foreground font-black text-xs sm:text-sm py-2.5 shadow-glow hover:brightness-105"
-              >
-                ⚡ Register Directly (No Password Needed) →
-              </Button>
-            </div>
 
             <div className="flex items-center gap-3 text-[10px] sm:text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
               <span className="h-px flex-1 bg-border" />
@@ -1131,7 +1066,7 @@ Platform Support: vybedriven@gmail.com
         ) : null}
 
         {/* STEP 1: BASIC & USER DETAILS OR JOIN WITH CODE */}
-        {(user || guestProceed) && step === 1 && (
+        {(user || getBuilderSession()) && step === 1 && (
           <div className="mt-4 space-y-4 text-xs sm:text-sm">
             {/* Registration Mode Switcher */}
             <div className="grid grid-cols-2 gap-2 rounded-2xl border border-border bg-surface p-1.5">
@@ -1533,7 +1468,7 @@ Platform Support: vybedriven@gmail.com
     )}
 
         {/* STEP 2: TEAM SETUP & SQUAD FORMATION */}
-        {(user || guestProceed) && step === 2 && (
+        {(user || getBuilderSession()) && step === 2 && (
           <form onSubmit={handleFinalSubmit} className="mt-4 space-y-5 text-xs sm:text-sm">
             {/* Important Notes Banner */}
             <div className="rounded-2xl border border-sky-400/35 bg-gradient-to-r from-sky-500/15 via-surface to-surface p-4">

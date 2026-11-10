@@ -26,6 +26,7 @@ import eventsIcon from "@/assets/nav/events.png.asset.json";
 import discoverIcon from "@/assets/nav/discover.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type Profile } from "@/lib/auth";
+import { signOutBuilderAccount } from "@/lib/builder-auth";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 
@@ -111,7 +112,7 @@ function ProfileMenu() {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await signOutBuilderAccount();
     setOpen(false);
     await navigate({ to: "/", replace: true });
   };
@@ -311,6 +312,12 @@ function NewUserWelcomePrompt() {
 
   useEffect(() => {
     if (loading || user) {
+      setVisible(false);
+      return;
+    }
+    const isOpportunityPage =
+      typeof window !== "undefined" && window.location.pathname.startsWith("/opportunities");
+    if (isOpportunityPage) {
       setVisible(false);
       return;
     }
@@ -539,7 +546,7 @@ export function Navbar() {
                   <button
                     type="button"
                     onClick={async () => {
-                      await supabase.auth.signOut();
+                      await signOutBuilderAccount();
                       setOpen(false);
                       window.location.href = "/";
                     }}

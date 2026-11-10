@@ -5,6 +5,8 @@ import { Navbar } from "@/components/SiteChrome";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { createBuilderAccount, signInBuilderAccount } from "@/lib/builder-auth";
+import { toast } from "sonner";
 
 type AuthSearch = { mode: "signin" | "signup"; next: string };
 const cleanNext = (value: unknown) =>
@@ -106,56 +108,22 @@ function AuthPage() {
       }
 
       try {
-        const { data: signUpData, error: authError } = await supabase.auth.signUp({
+        const { user: newBuilderUser, error: builderErr } = await createBuilderAccount({
+          fullName: name.trim(),
           email: email.trim(),
           password,
-          options: {
-            data: { full_name: name.trim() || undefined },
-            emailRedirectTo: `${window.location.origin}/auth?next=${encodeURIComponent(search.next)}`,
-          },
         });
 
         setBusy(false);
-        if (authError) {
-          const errLower = authError.message.toLowerCase();
-          if (errLower.includes("user already registered")) {
-            setError(
-              "An account with this email already exists. Please switch to 'Sign In' or click 'Continue with Google' above!"
-            );
-          } else if (
-            errLower.includes("rate limit") ||
-            errLower.includes("too many") ||
-            errLower.includes("429")
-          ) {
-            setError(
-              "⚡ Supabase email verification limit reached for this hour. Please click 'Continue with Google' above for instant 1-click sign in!"
-            );
-          } else {
-            setError(authError.message);
-          }
+        if (builderErr) {
+          setError(builderErr);
           return;
         }
 
-        if (!signUpData.session) {
-          setMessage(
-            `📩 Verification link sent to ${email.trim()}! Please click the confirmation link in your email to activate your account and access your event registrations.`
-          );
-          return;
+        if (newBuilderUser) {
+          toast.success(`Welcome, ${name.trim()}! Your builder account is ready.`);
+          await navigate({ to: search.next, replace: true });
         }
-
-        if (signUpData.user && name.trim()) {
-          try {
-            await supabase.from("profiles").upsert({
-              id: signUpData.user.id,
-              display_name: name.trim(),
-              updated_at: new Date().toISOString(),
-            });
-          } catch {
-            // Non-blocking
-          }
-        }
-
-        await navigate({ to: search.next, replace: true });
       } catch (err: unknown) {
         setBusy(false);
         setError(err instanceof Error ? err.message : "An unexpected signup error occurred.");
@@ -165,28 +133,21 @@ function AuthPage() {
 
     // Sign In Mode
     try {
-      const { error: authError } = await supabase.auth.signInWithPassword({
+      const { user: signedInUser, error: signInErr } = await signInBuilderAccount({
         email: email.trim(),
         password,
       });
 
       setBusy(false);
-      if (authError) {
-        if (authError.message.toLowerCase().includes("email not confirmed")) {
-          setError(
-            "⚠️ Your email is not verified yet. Please check your inbox (and Spam folder) for the verification email, or click 'Resend Verification' below."
-          );
-        } else if (authError.message.toLowerCase().includes("invalid login credentials")) {
-          setError(
-            "Invalid email or password. If you originally signed in with Google, please click 'Continue with Google' above. Or click 'Forgot password?' below to reset or set a new password."
-          );
-        } else {
-          setError(authError.message);
-        }
+      if (signInErr) {
+        setError(signInErr);
         return;
       }
 
-      await navigate({ to: search.next, replace: true });
+      if (signedInUser) {
+        toast.success("Welcome back!");
+        await navigate({ to: search.next, replace: true });
+      }
     } catch (err: unknown) {
       setBusy(false);
       setError(err instanceof Error ? err.message : "An unexpected sign-in error occurred.");
