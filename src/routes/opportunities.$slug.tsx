@@ -627,7 +627,7 @@ function OpportunityDetails() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(eventStructuredData) }}
       />
       <Navbar />
-      <main className="pb-24 lg:pb-0">
+      <main className="pb-12 lg:pb-0">
         {/* Hero Section */}
         <section className="border-b border-border bg-surface">
           <div className="mx-auto grid max-w-[1200px] gap-6 sm:gap-7 px-4 sm:px-6 pb-8 pt-8 sm:pb-10 sm:pt-12 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
@@ -721,6 +721,33 @@ function OpportunityDetails() {
                     ? "Register now to secure your participation spot."
                     : `Apply before ${item.registrationDeadline}.`}
                 </p>
+
+                {/* Mobile Organizer Banner if Organizer */}
+                {isHost && (
+                  <div className="mt-3 rounded-xl border border-neon/50 bg-neon/10 p-3 text-xs">
+                    <div className="flex items-center justify-between font-bold text-neon">
+                      <span className="flex items-center gap-1.5">
+                        <Crown className="size-4 text-amber-400" />
+                        Organizer Control
+                      </span>
+                      <span className="text-[10px] font-mono text-neon bg-neon/20 px-2 py-0.5 rounded-full">
+                        {regCount} registrations
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-muted-foreground">
+                      Access live attendee registrations, team rosters, and download CSV.
+                    </p>
+                    <Button
+                      asChild
+                      size="sm"
+                      className="mt-2.5 w-full rounded-lg bg-neon text-primary-foreground font-black text-xs hover:brightness-105 shadow-glow-soft"
+                    >
+                      <Link to="/manage-events" search={{ tab: "registrations", slug: item.slug }}>
+                        Open Registrations & CSV Dashboard →
+                      </Link>
+                    </Button>
+                  </div>
+                )}
 
                 {/* Mobile Action Buttons */}
                 {isRegistered ? (
@@ -928,28 +955,28 @@ function OpportunityDetails() {
                         rew.type === "cash" ? (
                           <div
                             key={rew.title}
-                            className="relative overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/15 via-surface to-surface p-6 sm:p-7 shadow-[0_0_30px_rgba(245,158,11,0.15)] transition hover:border-amber-400"
+                            className="relative overflow-hidden rounded-2xl sm:rounded-3xl border-2 border-amber-500/40 bg-gradient-to-br from-amber-500/15 via-surface to-surface p-4 sm:p-7 shadow-[0_0_30px_rgba(245,158,11,0.15)] transition hover:border-amber-400"
                           >
-                            <div className="absolute left-0 top-0 bottom-0 w-2 bg-gradient-to-b from-amber-400 via-yellow-300 to-amber-500" />
-                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                              <div className="flex items-center gap-4 sm:gap-6">
+                            <div className="absolute left-0 top-0 bottom-0 w-1.5 sm:w-2 bg-gradient-to-b from-amber-400 via-yellow-300 to-amber-500" />
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 sm:gap-6">
+                              <div className="flex items-center gap-3 sm:gap-6 min-w-0">
                                 <div className="relative shrink-0">
                                   <img
                                     src="/events/golden-star-trophy.png"
                                     alt="Grand Prize Trophy"
-                                    className="h-20 sm:h-24 w-auto object-contain drop-shadow-[0_8px_20px_rgba(245,158,11,0.5)]"
+                                    className="h-14 sm:h-20 md:h-24 w-auto object-contain drop-shadow-[0_8px_20px_rgba(245,158,11,0.5)]"
                                   />
                                 </div>
-                                <div className="flex flex-col">
-                                  <div className="flex items-baseline gap-2">
-                                    <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-amber-400 font-mono tracking-tight drop-shadow-[0_2px_10px_rgba(245,158,11,0.3)]">
+                                <div className="flex flex-col min-w-0">
+                                  <div className="flex flex-wrap items-baseline gap-1.5 sm:gap-2">
+                                    <span className="text-2xl min-[400px]:text-3xl sm:text-4xl lg:text-5xl font-black text-amber-400 font-mono tracking-tight drop-shadow-[0_2px_10px_rgba(245,158,11,0.3)]">
                                       {rew.amount}
                                     </span>
-                                    <span className="text-xs sm:text-sm font-extrabold tracking-widest text-amber-300 uppercase">
+                                    <span className="text-[11px] sm:text-sm font-extrabold tracking-widest text-amber-300 uppercase shrink-0">
                                       {rew.amountSub || "WORTH"}
                                     </span>
                                   </div>
-                                  <h3 className="mt-1 text-base sm:text-lg font-bold text-foreground">
+                                  <h3 className="mt-1 text-sm sm:text-lg font-bold text-foreground">
                                     {rew.title}
                                   </h3>
                                   <p className="mt-1 text-xs sm:text-sm text-muted-foreground leading-relaxed max-w-xl">
@@ -958,8 +985,8 @@ function OpportunityDetails() {
                                 </div>
                               </div>
                               <div className="shrink-0 flex items-center">
-                                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-400/15 px-4 py-2 text-xs font-bold text-amber-300 shadow-glow-soft">
-                                  <Trophy className="size-4 text-amber-400" />
+                                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-400/15 px-3.5 py-1.5 sm:px-4 sm:py-2 text-xs font-bold text-amber-300 shadow-glow-soft">
+                                  <Trophy className="size-3.5 sm:size-4 text-amber-400" />
                                   {rew.badge || "Certificate"}
                                 </span>
                               </div>

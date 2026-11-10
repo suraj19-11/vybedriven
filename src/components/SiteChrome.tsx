@@ -19,6 +19,7 @@ import {
   Settings,
   Sparkles,
   MessageCircle,
+  Crown,
 } from "lucide-react";
 import homeIcon from "@/assets/nav/home.png.asset.json";
 import hackathonsIcon from "@/assets/nav/hackathons.png.asset.json";
@@ -27,6 +28,7 @@ import discoverIcon from "@/assets/nav/discover.png.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth, type Profile } from "@/lib/auth";
 import { signOutBuilderAccount } from "@/lib/builder-auth";
+import { GOA_BUILDATHON_ORGANIZER_EMAILS, ADMIN_EMAILS } from "@/data/events-store";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 
@@ -128,6 +130,13 @@ function ProfileMenu() {
   const avatar = profile?.avatar_url?.trim() || "👨‍💻";
   const email = user.email || "";
   const completion = getProfileCompletion(profile);
+  const uEmail = email.toLowerCase().trim();
+  const isGoaOrganizer = Boolean(
+    uEmail &&
+      (GOA_BUILDATHON_ORGANIZER_EMAILS.includes(uEmail) ||
+        ADMIN_EMAILS.includes(uEmail) ||
+        uEmail.includes("goabuilds"))
+  );
 
   // Circular progress math (radius 22, circumference 138.2)
   const radius = 22;
@@ -231,6 +240,18 @@ function ProfileMenu() {
 
           {/* Menu Navigation Items */}
           <div className="mt-4 space-y-1 text-xs sm:text-sm">
+            {isGoaOrganizer && (
+              <Link
+                to="/manage-events"
+                search={{ tab: "registrations", slug: "goa-buildathon-2027" }}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-2.5 rounded-xl border border-neon/50 bg-neon/15 px-3 py-2 text-neon font-bold transition hover:bg-neon/25 shadow-glow-soft mb-1"
+              >
+                <Crown className="size-4 text-amber-400" />
+                <span>👑 Goa Buildathon Dashboard</span>
+              </Link>
+            )}
+
             <Link
               to="/manage-events"
               search={{ tab: "my-registrations" }}
@@ -407,6 +428,13 @@ export function Navbar() {
     "Builder";
   const avatar = profile?.avatar_url?.trim() || "👨‍💻";
   const completion = getProfileCompletion(profile);
+  const uEmail = (user?.email || "").toLowerCase().trim();
+  const isGoaOrganizer = Boolean(
+    uEmail &&
+      (GOA_BUILDATHON_ORGANIZER_EMAILS.includes(uEmail) ||
+        ADMIN_EMAILS.includes(uEmail) ||
+        uEmail.includes("goabuilds"))
+  );
 
   return (
     <header className="sticky top-2 sm:top-4 z-50 px-2.5 sm:px-4">
@@ -440,6 +468,18 @@ export function Navbar() {
           <Logo className="h-8.5 sm:h-11" />
         </div>
         <div className="hidden items-center gap-2 lg:flex">
+          {isGoaOrganizer && (
+            <Button
+              asChild
+              size="sm"
+              className="rounded-full border border-neon/50 bg-neon/15 text-neon hover:bg-neon hover:text-primary-foreground font-bold text-xs shadow-glow-soft"
+            >
+              <Link to="/manage-events" search={{ tab: "registrations", slug: "goa-buildathon-2027" }}>
+                <Crown className="size-3.5 mr-1 text-amber-400" />
+                Goa Dashboard
+              </Link>
+            </Button>
+          )}
           <Link
             to="/about"
             className="rounded-full px-3 py-2 text-sm font-medium text-muted-foreground transition hover:text-neon"
@@ -496,6 +536,17 @@ export function Navbar() {
           )}
 
           <div className="space-y-1">
+            {isGoaOrganizer && (
+              <Link
+                to="/manage-events"
+                search={{ tab: "registrations", slug: "goa-buildathon-2027" }}
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 rounded-xl border border-neon/50 bg-neon/15 px-3.5 py-3 text-sm font-bold text-neon shadow-glow-soft mb-2"
+              >
+                <Crown className="size-5 text-amber-400" />
+                <span>👑 Goa Buildathon Dashboard</span>
+              </Link>
+            )}
             {links.map((item) => {
               const active = item.to === "/" ? location.pathname === "/" : location.pathname.startsWith(item.to);
               return (
@@ -582,7 +633,7 @@ export function Footer() {
   };
 
   return (
-    <footer className="relative mt-20 border-t border-border bg-[#030704] text-foreground overflow-hidden">
+    <footer className="relative mt-8 sm:mt-14 border-t border-border bg-[#030704] text-foreground overflow-hidden">
       {/* Ambient background glows & cyber grid */}
       <div className="pointer-events-none absolute -top-40 left-1/2 h-[350px] w-[800px] -translate-x-1/2 rounded-full bg-neon/8 blur-[120px]" />
       <div className="pointer-events-none absolute bottom-0 left-1/2 h-[450px] w-[1000px] -translate-x-1/2 rounded-full bg-neon/10 blur-[140px]" />

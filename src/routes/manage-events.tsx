@@ -45,6 +45,9 @@ import {
   isEventOrganizer,
   mergeRemoteRegistrations,
   EVENT_CHANGE_SIGNAL,
+  GOA_BUILDATHON_ORGANIZER_EMAILS,
+  ADMIN_EMAILS,
+  findOpportunity,
   type EventRegistration,
   type HostedEvent,
 } from "@/data/events-store";
@@ -91,10 +94,28 @@ function ManageEventsPage() {
     }
   }, [user, loading, navigate, location.href]);
 
-  const [activeTab, setActiveTab] = useState<"events" | "registrations" | "my-registrations">(
-    search.tab || "events"
+  const userEmail = user?.email?.toLowerCase().trim();
+  const isGoaOrganizer = Boolean(
+    userEmail &&
+      (GOA_BUILDATHON_ORGANIZER_EMAILS.includes(userEmail) ||
+        ADMIN_EMAILS.includes(userEmail) ||
+        userEmail.includes("goabuilds"))
   );
-  const [selectedEventSlug, setSelectedEventSlug] = useState<string>(search.slug || "");
+
+  const [activeTab, setActiveTab] = useState<"events" | "registrations" | "my-registrations">(
+    search.tab || (isGoaOrganizer ? "registrations" : "events")
+  );
+  const [selectedEventSlug, setSelectedEventSlug] = useState<string>(
+    search.slug || (isGoaOrganizer ? "goa-buildathon-2027" : "")
+  );
+
+  useEffect(() => {
+    if (isGoaOrganizer && !search.tab) {
+      setActiveTab("registrations");
+      if (!selectedEventSlug) setSelectedEventSlug("goa-buildathon-2027");
+    }
+  }, [isGoaOrganizer, search.tab, selectedEventSlug]);
+
   const [applicantQuery, setApplicantQuery] = useState("");
   const [applicantStatusFilter, setApplicantStatusFilter] = useState<string>("All");
   const [syncTick, setSyncTick] = useState(0);
@@ -136,13 +157,39 @@ function ManageEventsPage() {
 
   // Selected event for applicants view (must be owned by the current organizer)
   const currentEvent = useMemo(() => {
-    if (!myEvents.length) return null;
     if (selectedEventSlug) {
       const matched = myEvents.find((e) => e.slug === selectedEventSlug);
       if (matched) return matched;
+      if (selectedEventSlug === "goa-buildathon-2027") {
+        const goa = findOpportunity("goa-buildathon-2027");
+        if (goa) {
+          return {
+            ...goa,
+            organizerId: user?.id || "goa-organizer",
+            organizerEmail: user?.email || "hello@goabuilds.com",
+            isHosted: true,
+            createdAt: "2026-11-08T00:00:00.000Z",
+            registrationType: "direct" as const,
+          };
+        }
+      }
     }
-    return myEvents[0];
-  }, [myEvents, selectedEventSlug]);
+    if (myEvents.length) return myEvents[0];
+    if (isGoaOrganizer) {
+      const goa = findOpportunity("goa-buildathon-2027");
+      if (goa) {
+        return {
+          ...goa,
+          organizerId: user?.id || "goa-organizer",
+          organizerEmail: user?.email || "hello@goabuilds.com",
+          isHosted: true,
+          createdAt: "2026-11-08T00:00:00.000Z",
+          registrationType: "direct" as const,
+        };
+      }
+    }
+    return null;
+  }, [myEvents, selectedEventSlug, isGoaOrganizer, user]);
 
   // Registrations strictly for this organizer's selected event
   const eventRegistrations = useMemo(() => {

@@ -133,6 +133,8 @@ export const GOA_BUILDATHON_ORGANIZER_EMAILS = [
   "goabuildathon@gmail.com",
   "harshhdhankhar@gmail.com",
   "hello@goabuilds.com",
+  "pandeysatyam2030@gmail.com",
+  "vybedriven@gmail.com",
 ];
 
 // Helper to safely get stored registrations
